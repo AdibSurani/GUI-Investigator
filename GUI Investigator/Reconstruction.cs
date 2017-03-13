@@ -68,7 +68,6 @@ namespace GUI_Investigator
 
         public Reconstruction(XElement gui)
         {
-            cache32bit.hax = (int)gui.Attribute("flag0") == 0 ? 8 : 4;
             cacheRectArray = new Cache<object>(ParseRectArray);
             Parse(gui);
         }
@@ -113,6 +112,7 @@ namespace GUI_Investigator
                 case 2: return GetOffset(attrs.Select(attr => (float)attr));
                 case 3: return GetOffset(attrs.Select(attr => (bool)attr));
                 case 4: return GetOffset(attrs.Select(attr => Rectangle.Parse(attr.Value)));
+                case 15: return cache32bit.Length;
                 default: return GetOffset(attrs.Select(attr => (int)attr));
             }
         }
@@ -142,6 +142,7 @@ namespace GUI_Investigator
                       ).ToList();
             table2 = (from pane in gui.Elements("anim").Elements("pane")
                       let maps = pane.Elements("map")
+                      let something5 = pane.Element("something5")
                       select new Entry2
                       {
                           id = (int)pane.Attribute("id"),
@@ -151,7 +152,12 @@ namespace GUI_Investigator
                           table4count = (byte)pane.Elements("property").Count(),
                           table5count = (byte)pane.Elements("state").Elements("animatedproperty").Count(),
                           strName = GetOffset(pane.Attribute("name").Value),
-                          texture = !maps.Any() ? -1 : GetOffset(new RectArray(0, maps.Select(map => Rectangle.Parse(map.Attribute("rect").Value))))
+                            // this texture still needs some investigation
+                          texture = maps.Any() || FromHex(pane.Attribute("type").Value) == 0x4F7228FC
+                            ? GetOffset(new RectArray(0, maps.Select(map => Rectangle.Parse(map.Attribute("rect").Value))))
+                            : something5 != null
+                            ? GetOffset(new[] { (int)something5.Attribute("value") })
+                            : -1
                       }
                       ).ToList();
             table3 = (from state in gui.Elements("anim").Elements("pane").Elements("state")
@@ -302,7 +308,9 @@ namespace GUI_Investigator
                       select new Entry6
                       {
                           frame = (short)change.Attribute("frame"),
-                          frameType = (byte)(int)change.Attribute("frameType")
+                          frameType = (byte)(int)change.Attribute("frameType"),
+                          dataOffset = (int)change.Attribute("frameType") != 8 ? 0
+                            : GetOffset(new[] { 0f, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1 }.SelectMany(BitConverter.GetBytes).ToArray())
                           // if frameType == 8 there is a need to get 64 bytes from the texture...?
                       }
                       ).ToList();

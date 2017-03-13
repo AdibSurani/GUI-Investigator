@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace GUI_Investigator
 {
-    static class BinaryReaderExtensions
+    static class IOExtensions
     {
         public static unsafe T ReadStruct<T>(this BinaryReader br)
         {

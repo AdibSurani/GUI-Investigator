@@ -82,6 +82,7 @@ namespace GUI_Investigator
                         case 2: return BitConverter.ToSingle(data32bit, dataOffset);
                         case 3: return BitConverter.ToBoolean(dataBool, dataOffset);
                         case 4: return dataRect.ToStruct<Rectangle>(dataOffset);
+                        case 15: return "";
                         case 17: return dataOffset == 1;
                         case 18: return dataOffset;
                         case 32: return new[] { BitConverter.ToInt32(dataRectArray, dataOffset) };
@@ -115,7 +116,9 @@ namespace GUI_Investigator
                         select new XElement("change",
                             new XAttribute("frame", e6.frame),
                             new XAttribute("frameType", e6.frameType),
-                            new XAttribute("value", GetData(e5.dataType, e5.dataOffset, i))));
+                            new XAttribute("value", GetData(e5.dataType, e5.dataOffset, i))
+                            ));
+                            //e6.frameType != 8 ? null : BitConverter.ToString((byte[])GetData(64, e6.dataOffset))));
                 }
 
                 XElement PrintTable<T>(List<T> table, string tableName)
@@ -200,7 +203,8 @@ namespace GUI_Investigator
                                     new XAttribute("name", dicString[e1.strName])),
                                 from n2 in Range(e0.table2start, e0.table2count)
                                 let e2 = table2[n2]
-                                let e2tex = e2.texture == -1 ? null : (RectArray)GetData(33, e2.texture)
+                                let e2tex = e2.texture == -1 || e2.tagHash == 0x2787DB24 ? null : (RectArray)GetData(33, e2.texture)
+                                let e2val = e2.tagHash != 0x2787DB24 ? null : (int[])GetData(32, e2.texture)
                                 select new XElement("pane",
                                     new XAttribute("id", e2.id),
                                     new XAttribute("type", $"{e2.tagHash:X8}"),
@@ -212,6 +216,9 @@ namespace GUI_Investigator
                                         let r = e2tex[ntex] // can we also map this to e24?
                                         //let e24 = table24[e2tex.offset + ntex] // this currently doesn't work
                                         select new XElement("map", new XAttribute("rect", r)),
+                                    e2val == null ? null :
+                                        new XElement("something5",
+                                            new XAttribute("value", e2val[0])), 
                                     Range(e2.table4start, e2.table4count).Select(GetProperty),
                                     from index in Range(0, e0.table1count)
                                     let e1 = table1[e0.table1start + index]
@@ -307,6 +314,8 @@ namespace GUI_Investigator
                 // let us construct!
 
                 var recon = new Reconstruction(gui);
+
+                //foreach (var e in recon.table5) Debug.WriteLine(e.dataOffset);
 
                 Debug.Assert(recon.cacheBool.Data.SequenceEqual(dataBool));
                 Debug.Assert(recon.cache32bit.Data.SequenceEqual(data32bit));

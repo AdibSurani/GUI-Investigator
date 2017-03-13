@@ -46,7 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ARC.cs" />
-    <Compile Include="BinaryReaderExtensions.cs" />
+    <Compile Include="IOExtensions.cs" />
     <Compile Include="Cache.cs" />
     <Compile Include="GUI.cs" />
     <Compile Include="GUIHeader.cs" />

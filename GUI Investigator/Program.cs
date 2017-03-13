@@ -44,15 +44,16 @@ namespace GUI_Investigator
                 }
 
                 // rectArray problems
-                if ("sys_msg_jpn|exam_sub00|invest_evidence_sub|sys_panel03|data|title_window|file|start_production|dtc_index_sub|dtc_move_sub|together_change|together_light_3D|battle_light|battle_sub01|tutorial_sce0|tutorial_sce2".Split('|').Contains(gui.Item1)) continue;
+                //if (!"sys_msg_jpn|exam_sub00|invest_evidence_sub|sys_panel03|data|title_window|file|start_production|dtc_index_sub|dtc_move_sub|together_change|together_light_3D|battle_light|battle_sub01|tutorial_sce0|tutorial_sce2".Split('|').Contains(gui.Item1)) continue;
+                //if (gui.Item1 != "together_change") continue;
 
                 // negative 0.0 floats
-                if ("invest_sub00|sys_panel00|sys_panel01|sys_panel02|sys_panel04|sys_panel05|sys_panel06|sys_panel07|sys_panel08".Split('|').Contains(gui.Item1)) continue;
+                //if ("invest_sub00|sys_panel00|sys_panel01|sys_panel02|sys_panel04|sys_panel05|sys_panel06|sys_panel07|sys_panel08".Split('|').Contains(gui.Item1)) continue;
 
                 // this is a single dataOffset change
-                if (gui.Item1 == "topic") continue;
-                if (gui.Item1 == "together_cursor") continue;
-                if (gui.Item1 == "together_topic") continue;
+                //if (gui.Item1 == "topic") continue;
+                //if (gui.Item1 == "together_cursor") continue;
+                //if (gui.Item1 == "together_topic") continue;
 
                 //if (gui.filename != " ") continue;
                 //if (gui.filename != "sys_msg_jpn") continue;

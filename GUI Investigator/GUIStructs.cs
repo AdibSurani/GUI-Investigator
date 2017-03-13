@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -223,10 +224,12 @@ namespace GUI_Investigator
     struct Rectangle // Note: This can also be a colour
     {
         public float X0, Y0, X1, Y1;
-        public override string ToString() => $"{X0:G9},{Y0:G9},{X1:G9},{Y1:G9}";
+        public static string f(float f) => BitConverter.ToInt32(BitConverter.GetBytes(f), 0) == int.MinValue ? "-0" : f.ToString("G9");
+        public static float f(string s) => s == "-0" ? BitConverter.ToSingle(BitConverter.GetBytes(int.MinValue), 0) : float.Parse(s);
+        public override string ToString() => $"{f(X0)},{f(Y0)},{f(X1)},{f(Y1)}";
         public static Rectangle Parse(string s)
         {
-            var fs = s.Split(',').Select(float.Parse).ToList();
+            var fs = s.Split(',').Select(f).ToList();
             return new Rectangle
             {
                 X0 = fs[0],
