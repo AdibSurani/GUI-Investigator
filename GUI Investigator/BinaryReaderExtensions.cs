@@ -48,5 +48,29 @@ namespace GUI_Investigator
             while (count-- > 0) yield return br.ReadStruct<T>();
             br.BaseStream.Position = tmp;
         }
+
+        public static bool TableEqual<T>(this List<T> item1, List<T> item2)
+        {
+            //return item1.Count == item2.Count && item1.Zip(item2, (x, y) => x.StructToArray().SequenceEqual(y.StructToArray())).All(b => b);
+            if (item1.Count != item2.Count) return false;
+            for (int i = 0; i < item1.Count; i++)
+            {
+                System.Diagnostics.Debug.Assert(item1[i].StructToArray().SequenceEqual(item2[i].StructToArray()));
+                if (!item1[i].StructToArray().SequenceEqual(item2[i].StructToArray())) return false;
+            }
+            return true;
+        }
+
+        public static void WritePadded<T>(this BinaryWriter bw, T item)
+        {
+            bw.Write(item.StructToArray());
+            while (bw.BaseStream.Position % 16 != 0) bw.BaseStream.WriteByte(0);
+        }
+
+        public static void WritePadded<T>(this BinaryWriter bw, List<T> table)
+        {
+            foreach (var item in table) bw.Write(item.StructToArray());
+            while (bw.BaseStream.Position % 16 != 0) bw.BaseStream.WriteByte(0);
+        }
     }
 }

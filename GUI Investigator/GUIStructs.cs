@@ -190,10 +190,10 @@ namespace GUI_Investigator
     class Entry20 // size 20
     {
         public int unkHash;
+        public int unk0;
         public int unk1;
         public int unk2;
         public int unk3;
-        public int unk4;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -220,7 +220,7 @@ namespace GUI_Investigator
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    class Rectangle // Note: This can also be a colour
+    struct Rectangle // Note: This can also be a colour
     {
         public float X0, Y0, X1, Y1;
         public override string ToString() => $"{X0:G9},{Y0:G9},{X1:G9},{Y1:G9}";

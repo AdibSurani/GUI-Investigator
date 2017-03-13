@@ -16,7 +16,7 @@ namespace GUI_Investigator
         const string sep = "\t";
         static void MyPrint(object s)
         {
-            Debug.WriteLine(s);
+            //Debug.WriteLine(s);
         }
 
         static int Pad(int n) => (n + 15) & ~15;
@@ -52,17 +52,17 @@ namespace GUI_Investigator
                 var table21 = br.ReadMultiple<Entry21>(header.table21offset, header.table21count).ToList();
                 var table22 = br.ReadMultiple<Entry22>(header.table22offset, header.table22count).ToList();
                 var table23 = br.ReadMultiple<Entry23>(header.table23offset, header.table23count).ToList();
-                var table24 = br.ReadMultiple<Entry24>(header.tableBoffset, header.tableBsize / 52).ToList();
+                var table24 = br.ReadMultiple<Entry24>(header.table24offset, header.table24size / 52).ToList();
 
                 br.BaseStream.Position = header.dataBoolOffset;
                 var dataBool = br.ReadBytes(header.data32bitOffset - header.dataBoolOffset);
                 var data32bit = br.ReadBytes(header.dataRectOffset - header.data32bitOffset);
                 var dataRect = br.ReadBytes(header.dataRectArrayOffset - header.dataRectOffset);
                 var dataRectArray = br.ReadBytes(header.dataStringOffset - header.dataRectArrayOffset);
-                var dataString = br.ReadBytes(header.tableBoffset - header.dataStringOffset);
+                var dataString = br.ReadBytes(header.table24offset - header.dataStringOffset);
 
                 var spl = Encoding.ASCII.GetString(dataString).Split('\0');
-                var dicString = spl.Select((str, i) => (spl.Take(i).Sum(s => s.Length + 1), str)).ToDictionary(p => p.Item1, p => p.Item2);
+                var dicString = spl.Select((str, i) => Tuple.Create(spl.Take(i).Sum(s => s.Length + 1), str)).ToDictionary(p => p.Item1, p => p.Item2);
 
                 int GetDataTypeLength(int n)
                 {
@@ -151,8 +151,6 @@ namespace GUI_Investigator
                     }
                 }
 
-                //if (table3.All(x => x.unk1 == 0)) return;
-
                 // All the cool printing stuff goes here!
                 MyPrint(new XElement("gui",
                     new XAttribute("filename", filename),
@@ -193,10 +191,12 @@ namespace GUI_Investigator
                             select new XElement("anim",
                                 new XAttribute("id", e0.id),
                                 new XAttribute("name", dicString[e0.strName]),
+                                new XAttribute("panesubcount", e0.table2subcount), // can be discovered?
                                 from n1 in Range(e0.table1start, e0.table1count)
                                 let e1 = table1[n1]
                                 select new XElement("sequence",
                                     new XAttribute("id", e1.id),
+                                    new XAttribute("maxframes", e1.maxframes), // can be discovered
                                     new XAttribute("name", dicString[e1.strName])),
                                 from n2 in Range(e0.table2start, e0.table2count)
                                 let e2 = table2[n2]
@@ -218,7 +218,10 @@ namespace GUI_Investigator
                                     let e3 = table3[e2.table3start + index]
                                     //where e3.table4count + e3.table5count != 0
                                     select new XElement("state",
-                                        new XAttribute("sequencename", dicString[e1.strName]),
+                                        new XAttribute("sequencename", dicString[e1.strName]), // not an e3 property
+                                        new XAttribute("maxframes", e3.maxframes), // can be discovered
+                                        new XAttribute("unk0", e3.unk0),
+                                        new XAttribute("unk1", e3.unk1),
                                         Range(e3.table4start, e3.table4count).Select(GetProperty),
                                         Range(e3.table5start, e3.table5count).Select(GetAnimatedProperty))));
 
@@ -230,6 +233,7 @@ namespace GUI_Investigator
                                  new XAttribute("name", dicString[e8.strName]),
                                  new XAttribute("t9entry", e8.table9entry),
                                  e9 == null ? null : new XAttribute("e9unks", string.Join(",", e9.unk0, e9.unk1, e9.unk2, e9.unk3)),
+                                 e9 == null ? null : new XAttribute("maxframes", e9.maxframes), // can be discovered
                                  e9 == null ? null : Range(e9.table5start, e9.table5count).Select(GetAnimatedProperty));
 
                 // images xml
@@ -277,7 +281,7 @@ namespace GUI_Investigator
                     from e20 in table20
                     select new XElement("e20",
                         new XAttribute("unkHash", e20.unkHash.ToString("X8")),
-                        new XAttribute("unks", string.Join(",", e20.unk1, e20.unk2, e20.unk3, e20.unk4))),
+                        new XAttribute("unks", string.Join(",", e20.unk0, e20.unk1, e20.unk2, e20.unk3))),
                     from e22 in table22
                     select new XElement("e22",
                         new XAttribute("unk", e22.unk),
@@ -297,71 +301,12 @@ namespace GUI_Investigator
                     new XAttribute("othercount", header.otherCount),
                     anims, images, events, misc);
 
-                Debug.WriteLine(gui.ToString().Replace("  ", "\t"));
-
-                //gui.Elements("abc").First().Attribute()
+                MyPrint(gui.ToString().Replace("  ", "\t"));
 
                 ////////////////////////
                 // let us construct!
 
-                var recon = new Reconstruction(header.flag0);
-                recon.Parse(gui);
-
-                // string reconstruction
-                //foreach (var e in table0) recon.GetOffset(dicString[e.strName]);
-                //foreach (var e in table1) recon.GetOffset(dicString[e.strName]);
-                //foreach (var e in table2) recon.GetOffset(dicString[e.strName]);
-                //foreach (var e in table7) recon.GetOffset(dicString[e.strName]);
-                //foreach (var e in table8) recon.GetOffset(dicString[e.strName]);
-                //foreach (var e in table17) recon.GetOffset(dicString[e.strName]);
-                //foreach (var e in table18)
-                //{
-                //    if (e.strPath != -1)
-                //        recon.GetOffset(dicString[e.strPath]);
-                //    recon.GetOffset(dicString[e.strName]);
-                //}
-                //foreach (var e in table19) recon.GetOffset(dicString[e.strPath]);
-                //foreach (var e in table22) recon.GetOffset(dicString[e.strPath]);
-                //foreach (var e in table4) recon.GetOffset(dicString[e.strProperty]);
-                //foreach (var e in table5) recon.GetOffset(dicString[e.strProperty]);
-
-                // int, bool, float, rect reconstruction
-                //foreach (var e in table4)
-                //{
-                //    if (e.dataType > 16) continue;
-                //    recon.GetOffset(GetData(e.dataType, e.dataOffset));
-                //}
-                //foreach (var e in table5)
-                //{
-                //    if (e.dataType > 16) continue;
-                //    var src = Range(0, e.count).Select(i => GetData(e.dataType, e.dataOffset, i));
-                //    recon.GetOffset(e.dataType == 2 ? src.Cast<float>() : e.dataType == 3 ? src.Cast<bool>() : e.dataType == 4 ? src.Cast<Rectangle>() : (object)src.Cast<int>());
-                //}
-                
-                // texture reconstruction
-                foreach (var e in table2)
-                {
-                    if (e.texture == -1) continue;
-                    // e.tagHash == 0x4F7228FC can have a zero count. this only happens twice.
-                    if (e.tagHash == 0x2787DB24) recon.GetOffset(GetData(32, e.texture)); // just a single count?
-                    else
-                    {
-                        int tmp = recon.rectArrayCount;
-                        var data = (RectArray)GetData(33, e.texture);
-                        recon.GetOffset(data);
-                        //Debug.Assert(recon.rectArrayCount - tmp == data.Count);
-                        for (int i = 0; i < data.Count; i++)
-                        {
-                            //Debug.Assert(data[i].ToString() == table24[tmp + i].dst.ToString());
-                        }
-                        //recon.GetOffset(GetData(e.tagHash == 0x2787DB24 ? 32 : 33, e.texture));
-                    }
-                }
-                foreach (var e in table6)
-                {
-                    if (e.frameType != 8) continue;
-                    recon.GetOffset(GetData(64, e.dataOffset));
-                }
+                var recon = new Reconstruction(gui);
 
                 Debug.Assert(recon.cacheBool.Data.SequenceEqual(dataBool));
                 Debug.Assert(recon.cache32bit.Data.SequenceEqual(data32bit));
@@ -369,13 +314,41 @@ namespace GUI_Investigator
                 Debug.Assert(recon.cacheRectArray.Data.SequenceEqual(dataRectArray));
                 Debug.Assert(recon.cacheString.Data.SequenceEqual(dataString));
 
-                var lst1 = table4.Select(e => e.strProperty).ToList();
-                var lst2 = recon.table4.Select(e => e.strProperty).ToList();
-                Debug.Assert(lst1.SequenceEqual(lst2));
-
-                Debug.Assert(table7.All(e => e.texture == -1));
+                Debug.Assert(recon.table0.TableEqual(table0));
+                Debug.Assert(recon.table1.TableEqual(table1));
+                Debug.Assert(recon.table2.TableEqual(table2));
+                Debug.Assert(recon.table3.TableEqual(table3));
+                Debug.Assert(recon.table4.TableEqual(table4));
+                Debug.Assert(recon.table5.TableEqual(table5));
+                Debug.Assert(recon.table6.TableEqual(table6));
+                Debug.Assert(recon.table7.TableEqual(table7));
+                Debug.Assert(recon.table8.TableEqual(table8));
+                Debug.Assert(recon.table9.TableEqual(table9));
+                Debug.Assert(recon.table10.TableEqual(table10));
+                Debug.Assert(recon.table11.TableEqual(table11));
+                Debug.Assert(recon.table12.TableEqual(table12));
+                Debug.Assert(recon.table13.TableEqual(table13));
+                Debug.Assert(recon.table14.TableEqual(table14));
+                Debug.Assert(recon.table15.TableEqual(table15));
+                Debug.Assert(recon.table16.TableEqual(table16));
+                Debug.Assert(recon.table17.TableEqual(table17));
+                Debug.Assert(recon.table18.TableEqual(table18));
+                Debug.Assert(recon.table19.TableEqual(table19));
+                Debug.Assert(recon.table20.TableEqual(table20));
+                Debug.Assert(recon.table21.TableEqual(table21));
+                Debug.Assert(recon.table22.TableEqual(table22));
+                Debug.Assert(recon.table23.TableEqual(table23));
+                Debug.Assert(recon.table24.TableEqual(table24));
 
                 Debug.Assert(recon.rectArrayCount == table24.Count);
+                Debug.Assert(recon.header.StructToArray().SequenceEqual(header.StructToArray()));
+
+                br.BaseStream.Position = 0;
+                var filedata = br.ReadBytes((int)br.BaseStream.Length);
+                //Debug.Assert(recon.filedata.SequenceEqual(filedata));
+
+                //Debug.Assert(table7.All(e => e.texture == -1));
+
             }
         }
     }

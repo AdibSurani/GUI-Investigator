@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 
 namespace GUI_Investigator
 {
@@ -52,9 +52,9 @@ namespace GUI_Investigator
         {
             get
             {
-                stream.Position = entry.offset;
+                stream.Position = entry.offset + 2;
                 var ms = new MemoryStream();
-                using (var ds = new InflaterInputStream(stream) { IsStreamOwner = false })
+                using (var ds = new DeflateStream(stream, CompressionMode.Decompress, true))
                 {
                     ds.CopyTo(ms);
                 }

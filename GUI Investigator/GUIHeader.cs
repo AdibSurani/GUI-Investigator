@@ -14,8 +14,8 @@ namespace GUI_Investigator
     [StructLayout(LayoutKind.Sequential)]
     class Header
     {
-        public int magic; // "GUI"
-        public int unk0; // 0x21F13
+        public int magic = 0x495547; // "GUI"
+        public int unk0 = 0x21F13;
         public int filesize;
         public byte flag0; // 0 or 2 -- needs more investigation
         public byte flag1; // 0 or 2 -- needs more investigation
@@ -54,12 +54,12 @@ namespace GUI_Investigator
         public int table23count; // always zero
 
         public int zero2;
-        public int table17count2; // same as table17count
-        public int tableBsize; // in bytes, 52 * number of entries
+        public int table7count2; // same as table7count
+        public int table24size; // in bytes, 52 * number of entries
         public int otherFlags; // not sure? looks like flags
 
-        public int width; // always 400
-        public int height; // always 240
+        public int width = 400; // always 400
+        public int height = 240; // always 240
         public int otherCount; // 0, 1 or 10 -- needs more investigation
 
         public int table0offset;
@@ -96,7 +96,7 @@ namespace GUI_Investigator
         public int dataRectOffset;
         public int dataRectArrayOffset;
         public int table5subcount; // table5count - table7count
-        public int tableBoffset;
+        public int table24offset;
         // table23, table6, dataBool, data32bit, dataRect, dataRectArray, dataString, tableB
 
         public void Test(int expectedFileSize)
