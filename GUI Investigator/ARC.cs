@@ -1,65 +1,65 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace GUI_Investigator
 {
-    class ARC : IDisposable
+    class ARC : List<ARC.Entry>
     {
         [StructLayout(LayoutKind.Sequential)]
         class Header
         {
             public int magic;
             public short version;
-            public short entries;
+            public short entryCount;
             int padding;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public class FileEntry
+        public class FileMetadata
         {
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
             public string filename;
-            public uint extensionHash;
+            public int extensionHash;
             public int compressedSize;
             public int uncompressedSize;
             public int offset;
         }
 
-        FileStream stream;
-
-        public void Dispose() => stream.Dispose();
-        public ARC(string filename) => stream = File.OpenRead(filename);
-
-        public IEnumerable<FileEntry> Entries
+        public class Entry
         {
-            get
+            public string Filename { get; }
+            public int ExtensionHash { get; }
+            public Stream Stream { get; }
+            public Entry(FileMetadata metadata, Stream stream)
             {
-                stream.Position = 0;
-                using (var br = new BinaryReader(stream, Encoding.Default, true))
-                {
-                    var header = br.ReadStruct<Header>();
-                    return br.ReadMultiple<FileEntry>(header.entries).ToList();
-                }
+                Filename = metadata.filename;
+                ExtensionHash = metadata.extensionHash;
+                Stream = stream;
             }
         }
 
-        public MemoryStream this[FileEntry entry]
+        public ARC(string filename)
         {
-            get
+            using (var br = new BinaryReader(File.OpenRead(filename)))
             {
-                stream.Position = entry.offset + 2;
-                var ms = new MemoryStream();
-                using (var ds = new DeflateStream(stream, CompressionMode.Decompress, true))
+                var header = br.ReadStruct<Header>();
+                var lst = br.ReadMultiple<FileMetadata>(12, header.entryCount).ToList();
+                AddRange(lst.Select(metadata => new Entry(metadata, GetDecompressedStream(metadata.offset))));
+
+                MemoryStream GetDecompressedStream(int offset)
                 {
-                    ds.CopyTo(ms);
+                    br.BaseStream.Position = offset + 2;
+                    var ms = new MemoryStream();
+                    using (var ds = new DeflateStream(br.BaseStream, CompressionMode.Decompress, true))
+                    {
+                        ds.CopyTo(ms);
+                    }
+                    ms.Position = 0;
+                    return ms;
                 }
-                ms.Position = 0;
-                return ms;
             }
         }
     }

@@ -51,6 +51,7 @@
     <Compile Include="GUI.cs" />
     <Compile Include="GUIHeader.cs" />
     <Compile Include="GUIStructs.cs" />
+    <Compile Include="ParsedStructs.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reconstruction.cs" />

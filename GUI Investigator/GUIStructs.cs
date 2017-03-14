@@ -221,7 +221,7 @@ namespace GUI_Investigator
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct Rectangle // Note: This can also be a colour
+    struct Rectangle // Note: This can also be a colour. The -0 hack is required to ensure a byte-for-byte match
     {
         public float X0, Y0, X1, Y1;
         public static string f(float f) => BitConverter.ToInt32(BitConverter.GetBytes(f), 0) == int.MinValue ? "-0" : f.ToString("G9");
@@ -230,25 +230,17 @@ namespace GUI_Investigator
         public static Rectangle Parse(string s)
         {
             var fs = s.Split(',').Select(f).ToList();
-            return new Rectangle
-            {
-                X0 = fs[0],
-                Y0 = fs[1],
-                X1 = fs[2],
-                Y1 = fs[3]
-            };
+            return new Rectangle { X0 = fs[0], Y0 = fs[1], X1 = fs[2], Y1 = fs[3] };
         }
-        //public override bool Equals(object obj) => ToString().Equals(obj.ToString());
-        //public override int GetHashCode() => ToString().GetHashCode();
     }
 
-    class RectArray : List<Rectangle>
-    {
-        public int offset;
-        public RectArray(int offset_, IEnumerable<Rectangle> src)
-        {
-            offset = offset_;
-            AddRange(src);
-        }
-    }
+    //class RectArray : List<Rectangle>
+    //{
+    //    public int offset;
+    //    public RectArray(int offset_, IEnumerable<Rectangle> src)
+    //    {
+    //        //offset = offset_;
+    //        AddRange(src);
+    //    }
+    //}
 }

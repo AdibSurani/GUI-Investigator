@@ -13,11 +13,11 @@ namespace GUI_Investigator
             return br.ReadBytes(Marshal.SizeOf<T>()).ToStruct<T>();
         }
 
-        public static unsafe T ToStruct<T>(this byte[] bytes, int offset = 0)
+        public static unsafe T ToStruct<T>(this byte[] bytes, int baseOffset = 0, int itemOffset = 0)
         {
             fixed (byte* pBuffer = bytes)
             {
-                return Marshal.PtrToStructure<T>((IntPtr)(pBuffer + offset));
+                return Marshal.PtrToStructure<T>((IntPtr)(pBuffer + baseOffset + itemOffset * Marshal.SizeOf<T>()));
             }
         }
 
@@ -31,16 +31,6 @@ namespace GUI_Investigator
             return buffer;
         }
 
-        public static bool Equal<T>(this T item1, T item2)
-        {
-            return item1.StructToArray().SequenceEqual(item2.StructToArray());
-        }
-
-        public static IEnumerable<T> ReadMultiple<T>(this BinaryReader br, int count)
-        {
-            while (count-- > 0) yield return br.ReadStruct<T>();
-        }
-
         public static IEnumerable<T> ReadMultiple<T>(this BinaryReader br, int offset, int count)
         {
             var tmp = br.BaseStream.Position;
@@ -51,23 +41,20 @@ namespace GUI_Investigator
 
         public static bool TableEqual<T>(this List<T> item1, List<T> item2)
         {
-            //return item1.Count == item2.Count && item1.Zip(item2, (x, y) => x.StructToArray().SequenceEqual(y.StructToArray())).All(b => b);
             if (item1.Count != item2.Count) return false;
             for (int i = 0; i < item1.Count; i++)
             {
-                System.Diagnostics.Debug.Assert(item1[i].StructToArray().SequenceEqual(item2[i].StructToArray()));
                 if (!item1[i].StructToArray().SequenceEqual(item2[i].StructToArray())) return false;
             }
             return true;
         }
 
-        public static void WritePadded<T>(this BinaryWriter bw, T item)
+        public static void Write<T>(this BinaryWriter bw, T item)
         {
             bw.Write(item.StructToArray());
-            while (bw.BaseStream.Position % 16 != 0) bw.BaseStream.WriteByte(0);
         }
 
-        public static void WritePadded<T>(this BinaryWriter bw, List<T> table)
+        public static void WriteTable<T>(this BinaryWriter bw, List<T> table)
         {
             foreach (var item in table) bw.Write(item.StructToArray());
             while (bw.BaseStream.Position % 16 != 0) bw.BaseStream.WriteByte(0);

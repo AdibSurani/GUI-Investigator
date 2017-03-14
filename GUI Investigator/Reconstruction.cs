@@ -44,64 +44,46 @@ namespace GUI_Investigator
 
         public byte[] filedata;
 
-        public int rectArrayCount = 0;
-        byte[] ParseRectArray(object obj)
-        {
-            switch (obj)
-            {
-                case List<Rectangle> lst:
-                    var ms = new MemoryStream();
-                    using (var bw = new BinaryWriter(ms))
-                    {
-                        bw.Write(lst.Count);
-                        bw.Write(lst.Count == 0 ? 0 : rectArrayCount);
-                        foreach (var r in lst) bw.Write(r.StructToArray());
-                        rectArrayCount += lst.Count;
-                        bw.Write(new byte[8]);
-                        return ms.ToArray();
-                    }
-                case int[] arr: return BitConverter.GetBytes(arr[0]).Concat(new byte[12]).ToArray();
-                case byte[] b: return b;
-                default: throw new NotImplementedException();
-            }
-        }
-
         public Reconstruction(XElement gui)
         {
+            int rectArrayCount = 0; // should be equal to table24.Count at the end of it all
             cacheRectArray = new Cache<object>(ParseRectArray);
             Parse(gui);
+
+            byte[] ParseRectArray(object obj)
+            {
+                switch (obj)
+                {
+                    case List<Rectangle> lst:
+                        var ms = new MemoryStream();
+                        using (var bw = new BinaryWriter(ms))
+                        {
+                            bw.Write(lst.Count);
+                            bw.Write(lst.Count == 0 ? 0 : rectArrayCount);
+                            foreach (var r in lst) bw.Write(r.StructToArray());
+                            rectArrayCount += lst.Count;
+                            bw.Write(new byte[8]);
+                            return ms.ToArray();
+                        }
+                    case int[] arr: return BitConverter.GetBytes(arr[0]).Concat(new byte[12]).ToArray();
+                    case byte[] b: return b;
+                    default: throw new NotImplementedException();
+                }
+            }
         }
 
-        public int GetOffset(object obj)
-        {
-            switch (obj)
-            {
-                case string s: return cacheString[s];
-                case bool b: return cacheBool[new[] { b }];
-                case int i: return cache32bit[Convert.ToBase64String(BitConverter.GetBytes(i))];
-                case float f: return cache32bit[Convert.ToBase64String(BitConverter.GetBytes(f))];
-                case Rectangle r: return cacheRect[r.ToString()];
-                case int[] arr: return cacheRectArray[arr];
-                case RectArray lst: return cacheRectArray[lst];
-                case byte[] b: return cacheRectArray[b];
-                case IEnumerable<int> arr: return cache32bit[Convert.ToBase64String(arr.SelectMany(BitConverter.GetBytes).ToArray())];
-                case IEnumerable<float> arr: return cache32bit[Convert.ToBase64String(arr.SelectMany(BitConverter.GetBytes).ToArray())];
-                case IEnumerable<bool> arr: return cacheBool[arr.ToArray()];
-                case IEnumerable<Rectangle> arr: return cacheRect[string.Join(",", arr)];
-            }
-            throw new NotImplementedException();
-        }
+        public int CacheString(string s) => cacheString[s];
 
         int GetDataOffset(int datatype, XAttribute attr)
         {
             switch (datatype)
             {
-                case 2: return GetOffset((float)attr);
-                case 3: return GetOffset((bool)attr);
-                case 4: return GetOffset(Rectangle.Parse(attr.Value));
+                case 2: return cache32bit[Convert.ToBase64String(BitConverter.GetBytes((float)attr))];
+                case 3: return cacheBool[new[] { (bool)attr }];
+                case 4: return cacheRect[Rectangle.Parse(attr.Value).ToString()];
                 case 17: return (bool)attr ? 1 : 0;
                 case 18: return (int)attr;
-                default: return GetOffset((int)attr);
+                default: return cache32bit[Convert.ToBase64String(BitConverter.GetBytes((int)attr))];
             }
         }
 
@@ -109,11 +91,11 @@ namespace GUI_Investigator
         {
             switch (datatype)
             {
-                case 2: return GetOffset(attrs.Select(attr => (float)attr));
-                case 3: return GetOffset(attrs.Select(attr => (bool)attr));
-                case 4: return GetOffset(attrs.Select(attr => Rectangle.Parse(attr.Value)));
+                case 2: return cache32bit[Convert.ToBase64String(attrs.Select(attr => (float)attr).SelectMany(BitConverter.GetBytes).ToArray())];
+                case 3: return cacheBool[attrs.Select(attr => (bool)attr).ToArray()];
+                case 4: return cacheRect[string.Join(",", attrs.Select(attr => Rectangle.Parse(attr.Value)))];
                 case 15: return cache32bit.Length;
-                default: return GetOffset(attrs.Select(attr => (int)attr));
+                default: return cache32bit[Convert.ToBase64String(attrs.Select(attr => (int)attr).SelectMany(BitConverter.GetBytes).ToArray())];
             }
         }
 
@@ -124,7 +106,7 @@ namespace GUI_Investigator
             table0 = (from anim in gui.Elements("anim")
                       select new Entry0
                       {
-                          strName = GetOffset(anim.Attribute("name").Value),
+                          strName = CacheString(anim.Attribute("name").Value),
                           id = (int)anim.Attribute("id"),
                           table2subcount = (short)anim.Attribute("panesubcount"),
                           table1count = (short)anim.Elements("sequence").Count(),
@@ -135,7 +117,7 @@ namespace GUI_Investigator
             table1 = (from seq in gui.Elements("anim").Elements("sequence")
                       select new Entry1
                       {
-                          strName = GetOffset(seq.Attribute("name").Value),
+                          strName = CacheString(seq.Attribute("name").Value),
                           id = (int)seq.Attribute("id"),
                           maxframes = (int)seq.Attribute("maxframes")
                       }
@@ -151,12 +133,11 @@ namespace GUI_Investigator
                           child = (int)pane.Attribute("child"),
                           table4count = (byte)pane.Elements("property").Count(),
                           table5count = (byte)pane.Elements("state").Elements("animatedproperty").Count(),
-                          strName = GetOffset(pane.Attribute("name").Value),
-                            // this texture still needs some investigation
+                          strName = CacheString(pane.Attribute("name").Value),
                           texture = maps.Any() || FromHex(pane.Attribute("type").Value) == 0x4F7228FC
-                            ? GetOffset(new RectArray(0, maps.Select(map => Rectangle.Parse(map.Attribute("rect").Value))))
+                            ? cacheRectArray[maps.Select(map => Rectangle.Parse(map.Attribute("rect").Value)).ToList()]
                             : something5 != null
-                            ? GetOffset(new[] { (int)something5.Attribute("value") })
+                            ? cacheRectArray[new[] { (int)something5.Attribute("value") }]
                             : -1
                       }
                       ).ToList();
@@ -170,7 +151,8 @@ namespace GUI_Investigator
                           unk1 = (short)state.Attribute("unk1")
                       }
                       ).ToList();
-            // table6 also contributes to texture... in the sense of dataOffset
+
+            // tables 4-6 are deferred until later
             table7 = (from pane in gui.Elements("pane")
                       select new Entry7
                       {
@@ -178,7 +160,7 @@ namespace GUI_Investigator
                           next = (int)pane.Attribute("next"),
                           child = (int)pane.Attribute("child"),
                           table4count = pane.Elements("property").Count(),
-                          strName = GetOffset(pane.Attribute("name").Value),
+                          strName = CacheString(pane.Attribute("name").Value),
                           tagHash = FromHex(pane.Attribute("type").Value)
                       }
                       ).ToList();
@@ -187,7 +169,7 @@ namespace GUI_Investigator
                       {
                           id = (int)evt.Attribute("id"),
                           type = (int)evt.Attribute("type"),
-                          strName = GetOffset(evt.Attribute("name").Value),
+                          strName = CacheString(evt.Attribute("name").Value),
                           table9entry = (int)evt.Attribute("t9entry")
                       }
                       ).ToList();
@@ -231,7 +213,7 @@ namespace GUI_Investigator
                        select new Entry17
                        {
                            id = (int)e17.Attribute("id"),
-                           strName = GetOffset(e17.Attribute("name").Value),
+                           strName = CacheString(e17.Attribute("name").Value),
                            varHash = FromHex(e17.Attribute("varHash").Value),
                            id2 = (int)e17.Attribute("id2")
                        }
@@ -244,12 +226,12 @@ namespace GUI_Investigator
                            height = (short)e18.Attribute("height"),
                            scaleX = (float)e18.Attribute("sclX"),
                            scaleY = (float)e18.Attribute("sclY"),
-                           strPath = e18.Attribute("path") == null ? -1 : GetOffset(e18.Attribute("path").Value),
-                           strName = GetOffset(e18.Attribute("name").Value)
+                           strPath = e18.Attribute("path") == null ? -1 : CacheString(e18.Attribute("path").Value),
+                           strName = CacheString(e18.Attribute("name").Value)
                        }
                        ).ToList();
             table19 = (from e19 in gui.Element("misc").Elements("e19")
-                       select new Entry19 { strPath = GetOffset(e19.Attribute("path").Value) }
+                       select new Entry19 { strPath = CacheString(e19.Attribute("path").Value) }
                        ).ToList();
             table20 = (from e20 in gui.Element("misc").Elements("e20")
                        let unks = e20.Attribute("unks").Value.Split(',').Select(int.Parse).ToList()
@@ -266,7 +248,7 @@ namespace GUI_Investigator
                        select new Entry22
                        {
                            unk = (int)e22.Attribute("unk"),
-                           strPath = GetOffset(e22.Attribute("path").Value)
+                           strPath = CacheString(e22.Attribute("path").Value)
                        }
                        ).ToList();
             table24 = (from e24 in gui.Element("misc").Elements("e24")
@@ -288,7 +270,7 @@ namespace GUI_Investigator
             table4 = (from prop in props
                       select new Entry4
                       {
-                          strProperty = GetOffset(prop.Attribute("name").Value),
+                          strProperty = CacheString(prop.Attribute("name").Value),
                           dataType = (int)prop.Attribute("datatype"),
                           dataOffset = GetDataOffset((int)prop.Attribute("datatype"), prop.Attribute("value"))
                       }
@@ -296,7 +278,7 @@ namespace GUI_Investigator
             table5 = (from animprop in animprops
                       select new Entry5
                       {
-                          strProperty = GetOffset(animprop.Attribute("name").Value),
+                          strProperty = CacheString(animprop.Attribute("name").Value),
                           dataType = (byte)(int)animprop.Attribute("datatype"),
                           count = (byte)animprop.Elements("change").Count(),
                           id = (int)animprop.Attribute("id"),
@@ -309,13 +291,12 @@ namespace GUI_Investigator
                       {
                           frame = (short)change.Attribute("frame"),
                           frameType = (byte)(int)change.Attribute("frameType"),
-                          dataOffset = (int)change.Attribute("frameType") != 8 ? 0
-                            : GetOffset(new[] { 0f, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1 }.SelectMany(BitConverter.GetBytes).ToArray())
-                          // if frameType == 8 there is a need to get 64 bytes from the texture...?
+                          dataOffset = (int)change.Attribute("frameType") != 8 ? 0 // technically we'd want to read 64 bytes, but mehh
+                            : cacheRectArray[new[] { 0f, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1 }.SelectMany(BitConverter.GetBytes).ToArray()]
                       }
                       ).ToList();
 
-            // start adjustments
+            // start offset adjustments
             for (int i = 0; i < table0.Count - 1; i++)
             {
                 table0[i + 1].table1start = table0[i].table1start + table0[i].table1count;
@@ -362,76 +343,87 @@ namespace GUI_Investigator
                 somecount2 = somecounts[2],
                 somecount3 = somecounts[3],
                 otherFlags = (int)gui.Attribute("otherflags"),
-                otherCount = (int)gui.Attribute("othercount")
+                otherCount = (int)gui.Attribute("othercount"),
+                table0count = table0.Count,
+                table1count = table1.Count,
+                table2count = table2.Count,
+                table3count = table3.Count,
+                table4count = table4.Count,
+                table5count = table5.Count,
+                table6count = table6.Count,
+                table7count = table7.Count,
+                table8count = table8.Count,
+                table9count = table9.Count,
+                table10count = table10.Count,
+                table11count = table11.Count,
+                table12count = table12.Count,
+                table13count = table13.Count,
+                table14count = table14.Count,
+                table15count = table15.Count,
+                table16count = table16.Count,
+                table17count = table17.Count,
+                table18count = table18.Count,
+                table19count = table19.Count,
+                table20count = table20.Count,
+                table21count = table21.Count,
+                table22count = table22.Count,
+                table23count = table23.Count,
+                table24size = table24.Count * 52,
+                table5subcount = table5.Count - table7.Count,
+                table7count2 = table7.Count
             };
 
-            header.table0count = table0.Count;
-            header.table1count = table1.Count;
-            header.table2count = table2.Count;
-            header.table3count = table3.Count;
-            header.table4count = table4.Count;
-            header.table5count = table5.Count;
-            header.table6count = table6.Count;
-            header.table7count = table7.Count;
-            header.table8count = table8.Count;
-            header.table9count = table9.Count;
-            header.table10count = table10.Count;
-            header.table11count = table11.Count;
-            header.table12count = table12.Count;
-            header.table13count = table13.Count;
-            header.table14count = table14.Count;
-            header.table15count = table15.Count;
-            header.table16count = table16.Count;
-            header.table17count = table17.Count;
-            header.table18count = table18.Count;
-            header.table19count = table19.Count;
-            header.table20count = table20.Count;
-            header.table21count = table21.Count;
-            header.table22count = table22.Count;
-            header.table23count = table23.Count;
-            header.table24size = table24.Count * 52;
-            header.table5subcount = header.table5count - header.table7count;
-            header.table7count2 = table7.Count;
-
-            var ms = new MemoryStream();
-            using (var bw = new BinaryWriter(ms, Encoding.Default, true))
+            using (var bw = new BinaryWriter(new MemoryStream()))
             {
-                bw.WritePadded(header);
-                header.table0offset = (int)bw.BaseStream.Position; bw.WritePadded(table0);
-                header.table1offset = (int)bw.BaseStream.Position; bw.WritePadded(table1);
-                header.table2offset = (int)bw.BaseStream.Position; bw.WritePadded(table2);
-                header.table3offset = (int)bw.BaseStream.Position; bw.WritePadded(table3);
-                header.table4offset = (int)bw.BaseStream.Position; bw.WritePadded(table4);
-                header.table5offset = (int)bw.BaseStream.Position; bw.WritePadded(table5);
-                header.table7offset = (int)bw.BaseStream.Position; bw.WritePadded(table7);
-                header.table8offset = (int)bw.BaseStream.Position; bw.WritePadded(table8);
-                header.table9offset = (int)bw.BaseStream.Position; bw.WritePadded(table9);
-                header.table10offset = (int)bw.BaseStream.Position; bw.WritePadded(table10);
-                header.table11offset = (int)bw.BaseStream.Position; bw.WritePadded(table11);
-                header.table12offset = (int)bw.BaseStream.Position; bw.WritePadded(table12);
-                header.table13offset = (int)bw.BaseStream.Position; bw.WritePadded(table13);
-                header.table14offset = (int)bw.BaseStream.Position; bw.WritePadded(table14);
-                header.table15offset = (int)bw.BaseStream.Position; bw.WritePadded(table15);
-                header.table16offset = (int)bw.BaseStream.Position; bw.WritePadded(table16);
-                header.table17offset = (int)bw.BaseStream.Position; bw.WritePadded(table17);
-                header.table18offset = (int)bw.BaseStream.Position; bw.WritePadded(table18);
-                header.table19offset = (int)bw.BaseStream.Position; bw.WritePadded(table19);
-                header.table20offset = (int)bw.BaseStream.Position; bw.WritePadded(table20);
-                header.table21offset = (int)bw.BaseStream.Position; bw.WritePadded(table21);
-                header.table22offset = (int)bw.BaseStream.Position; bw.WritePadded(table22);
-                header.table23offset = (int)bw.BaseStream.Position; bw.WritePadded(table23);
-                header.table6offset = (int)bw.BaseStream.Position; bw.WritePadded(table6);
-                header.dataBoolOffset = (int)bw.BaseStream.Position; bw.Write(cacheBool.Data);
-                header.data32bitOffset = (int)bw.BaseStream.Position; bw.Write(cache32bit.Data);
-                header.dataRectOffset = (int)bw.BaseStream.Position; bw.Write(cacheRect.Data);
-                header.dataRectArrayOffset = (int)bw.BaseStream.Position; bw.Write(cacheRectArray.Data);
-                header.dataStringOffset = (int)bw.BaseStream.Position; bw.Write(cacheString.Data);
-                header.table24offset = (int)bw.BaseStream.Position; bw.WritePadded(table24);
-                header.filesize = (int)bw.BaseStream.Position;
+                void WriteBytes(ref int offset, params byte[][] buffers)
+                {
+                    offset = (int)bw.BaseStream.Position;
+                    foreach (var item in buffers)
+                        bw.Write(item);
+                    while (bw.BaseStream.Position % 16 != 0)
+                        bw.BaseStream.WriteByte(0);
+                }
+                void WriteTable<T>(ref int offset, List<T> table)
+                {
+                    WriteBytes(ref offset, table.Select(item => item.StructToArray()).ToArray());
+                }
+
+                WriteBytes(ref header.zero3, header.StructToArray());
+                WriteTable(ref header.table0offset, table0);
+                WriteTable(ref header.table1offset, table1);
+                WriteTable(ref header.table2offset, table2);
+                WriteTable(ref header.table3offset, table3);
+                WriteTable(ref header.table4offset, table4);
+                WriteTable(ref header.table5offset, table5);
+                WriteTable(ref header.table7offset, table7);
+                WriteTable(ref header.table8offset, table8);
+                WriteTable(ref header.table9offset, table9);
+                WriteTable(ref header.table10offset, table10);
+                WriteTable(ref header.table11offset, table11);
+                WriteTable(ref header.table12offset, table12);
+                WriteTable(ref header.table13offset, table13);
+                WriteTable(ref header.table14offset, table14);
+                WriteTable(ref header.table15offset, table15);
+                WriteTable(ref header.table16offset, table16);
+                WriteTable(ref header.table17offset, table17);
+                WriteTable(ref header.table18offset, table18);
+                WriteTable(ref header.table19offset, table19);
+                WriteTable(ref header.table20offset, table20);
+                WriteTable(ref header.table21offset, table21);
+                WriteTable(ref header.table22offset, table22);
+                WriteTable(ref header.table23offset, table23);
+                WriteTable(ref header.table6offset, table6);
+                WriteBytes(ref header.dataBoolOffset, cacheBool.Data);
+                WriteBytes(ref header.data32bitOffset, cache32bit.Data);
+                WriteBytes(ref header.dataRectOffset, cacheRect.Data);
+                WriteBytes(ref header.dataRectArrayOffset, cacheRectArray.Data);
+                WriteBytes(ref header.dataStringOffset, cacheString.Data);
+                WriteTable(ref header.table24offset, table24);
+                WriteBytes(ref header.filesize, new byte[0]);
                 bw.BaseStream.Position = 0;
-                bw.WritePadded(header);
+                WriteBytes(ref header.zero3, header.StructToArray());
+                filedata = ((MemoryStream)bw.BaseStream).ToArray();
             }
-            filedata = ms.ToArray();
         }
     }
 }
