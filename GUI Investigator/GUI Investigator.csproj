@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>GUI_Investigator</RootNamespace>
     <AssemblyName>GUI Investigator</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
@@ -23,6 +23,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -49,12 +50,11 @@
     <Compile Include="IOExtensions.cs" />
     <Compile Include="Cache.cs" />
     <Compile Include="GUI.cs" />
-    <Compile Include="GUIHeader.cs" />
-    <Compile Include="GUIStructs.cs" />
+    <Compile Include="RawStructs.cs" />
     <Compile Include="ParsedStructs.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Reconstruction.cs" />
+    <Compile Include="Rectangle.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

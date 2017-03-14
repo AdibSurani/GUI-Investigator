@@ -32,12 +32,12 @@ namespace GUI_Investigator
         {
             public string Filename { get; }
             public int ExtensionHash { get; }
-            public Stream Stream { get; }
-            public Entry(FileMetadata metadata, Stream stream)
+            public byte[] Data { get; }
+            public Entry(FileMetadata metadata, byte[] data)
             {
                 Filename = metadata.filename;
                 ExtensionHash = metadata.extensionHash;
-                Stream = stream;
+                Data = data;
             }
         }
 
@@ -46,10 +46,10 @@ namespace GUI_Investigator
             using (var br = new BinaryReader(File.OpenRead(filename)))
             {
                 var header = br.ReadStruct<Header>();
-                var lst = br.ReadMultiple<FileMetadata>(12, header.entryCount).ToList();
+                var lst = Enumerable.Range(0, header.entryCount).Select(_ => br.ReadStruct<FileMetadata>()).ToList();
                 AddRange(lst.Select(metadata => new Entry(metadata, GetDecompressedStream(metadata.offset))));
 
-                MemoryStream GetDecompressedStream(int offset)
+                byte[] GetDecompressedStream(int offset)
                 {
                     br.BaseStream.Position = offset + 2;
                     var ms = new MemoryStream();
@@ -58,7 +58,7 @@ namespace GUI_Investigator
                         ds.CopyTo(ms);
                     }
                     ms.Position = 0;
-                    return ms;
+                    return ms.ToArray();
                 }
             }
         }

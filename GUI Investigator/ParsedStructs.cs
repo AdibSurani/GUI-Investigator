@@ -1,129 +1,133 @@
-﻿/*
- * NOT CURRENTLY IN USE
- * 
- * 
- * 
- * 
- * 
- * 
- */
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Xml.Serialization;
 
 namespace GUI_Investigator
 {
-    class Property
+    public class Property
     {
+        [XmlAttribute]
         public int datatype;
-        public string name;
-        public string value;
+        [XmlAttribute]
+        public string name, value;
     }
 
-    class AnimatedProperty
+    public class AnimatedProperty
     {
-        public int id;
-        public int datatype;
+        [XmlAttribute]
+        public int id, datatype;
+        [XmlAttribute]
         public string name;
+        [XmlElement("change")]
         public List<Change> changes;
 
         public class Change
         {
-            public int frame;
-            public int frameType;
+            [XmlAttribute]
+            public int frame, frameType;
+            [XmlAttribute]
             public string value;
         }
     }
 
-    class Event
+    public class Event
     {
-        public int id;
-        public int type;
+        [XmlAttribute]
+        public int id, type, t9entry;
+        [XmlAttribute]
         public string name;
-        public int t9entry;
-        public int? unk0;
-        public int? unk1;
-        public int? unk2;
-        public int? unk3;
-        public int? maxframes;
-        public List<AnimatedProperty> animprops;
+        public T9Values t9values;
+
+        public class T9Values
+        {
+            [XmlAttribute]
+            public int unk0, unk1, unk2, unk3, maxframes;
+            [XmlElement("animprop")]
+            public List<AnimatedProperty> animprops;
+        }
     }
 
-    class Pane
+    public class Pane
     {
-        public int id;
-        public int type;
+        [XmlAttribute]
+        public int id, type, next, child;
+        [XmlAttribute]
         public string name;
-        public int next;
-        public int child;
+        [XmlElement("prop")]
         public List<Property> props;
         public AnimatedProperty animprop;
     }
 
-    class Anim
+    public class Anim
     {
-        public int id;
+        [XmlAttribute]
+        public int id, table2subcount; // can be discovered?
+        [XmlAttribute]
         public string name;
-        public int table2subcount; // can be discovered?
+        [XmlElement("seq")]
         public List<Sequence> seqs;
+        [XmlElement("pane")]
         public List<AnimPane> panes;
-
 
         public class Sequence
         {
-            public int id;
-            public int maxframes;
+            [XmlAttribute]
+            public int id, maxframes;
+            [XmlAttribute]
             public string name;
         }
 
         public class AnimPane : Pane
         {
+            [XmlElement]
+            public int[] something5;
+            [XmlElement("map")]
             public List<Rectangle> maps;
-            public int? something5;
+            [XmlElement("state")]
             public List<State> states;
 
             public class State
             {
+                [XmlAttribute]
                 public string sequencename; // not really required
-                public int maxframes;
-                public int unk0;
-                public int unk1;
+                [XmlAttribute]
+                public int unk0, unk1, maxframes;
+                [XmlElement("prop")]
                 public List<Property> props;
+                [XmlElement("animprop")]
                 public List<AnimatedProperty> animprops;
             }
         }
     }
 
-    class Parsed11 { public int id; }
-    class Parsed15 { public int id, unk; }
-    class Parsed16 { public int unk0, unk1, unk2, unk3; }
-    class Parsed17 { public int id, id2, varHash; public string name; }
-    class Parsed18 { public int id, width, height; public float sclX, sclY; public string name, path; }
-    class Parsed19 { public string path; }
-    class Parsed20 { public int unk0, unk1, unk2, unk3, unkHash; }
-    class Parsed22 { public int unk; public string path; }
-    class Parsed24 { public Rectangle dst, src; } // how to serialize these properly??
+    public class Parsed11 {[XmlAttribute] public int id; }
+    public class Parsed15 {[XmlAttribute] public int id, unk; }
+    public class Parsed16 {[XmlAttribute] public int unk0, unk1, unk2, unk3; }
+    public class Parsed17 {[XmlAttribute] public int id, id2, varHash;[XmlAttribute] public string name; }
+    public class Parsed18 {[XmlAttribute] public int id, width, height;[XmlAttribute] public float sclX, sclY;[XmlAttribute] public string name, path; }
+    public class Parsed19 {[XmlAttribute] public string path; }
+    public class Parsed20 {[XmlAttribute] public int unk0, unk1, unk2, unk3, unkHash; }
+    public class Parsed22 {[XmlAttribute] public int unk;[XmlAttribute] public string path; }
+    public class Parsed24 { public Rectangle dst, src; } // @todo: figure out how to XmlAttribute these
 
-    class ParsedGUI
+    public class Unknown
     {
-        public string filename;
-        public int id;
-        public int flag0, flag1, otherflags;
-        public int somecount0, somecount1, somecount2, somecount3, othercount;
-        public List<Anim> anims;
-        public List<Pane> panes;
-        public List<Event> events;
+        [XmlElement]
         public List<Parsed11> parsed11;
+        [XmlElement]
         public List<Parsed15> parsed15;
+        [XmlElement]
         public List<Parsed16> parsed16;
+        [XmlElement]
         public List<Parsed17> parsed17;
+        [XmlElement]
         public List<Parsed18> parsed18;
+        [XmlElement]
         public List<Parsed19> parsed19;
+        [XmlElement]
         public List<Parsed20> parsed20;
+        [XmlElement]
         public List<Parsed22> parsed22;
+        [XmlElement]
         public List<Parsed24> parsed24;
     }
 }
