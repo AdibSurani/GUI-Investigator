@@ -44,11 +44,11 @@ namespace GUI_Investigator
 
         public byte[] filedata;
 
-        public Reconstruction(XElement gui)
+        public Reconstruction(XElement guixml, ParsedGUI gui)
         {
             int rectArrayCount = 0; // should be equal to table24.Count at the end of it all
             cacheRectArray = new Cache<object>(ParseRectArray);
-            Parse(gui);
+            Parse(guixml, gui);
 
             byte[] ParseRectArray(object obj)
             {
@@ -101,28 +101,26 @@ namespace GUI_Investigator
 
         int FromHex(string s) => Convert.ToInt32(s, 16);
 
-        public void Parse(XElement gui)
+        public void Parse(XElement guixml, ParsedGUI gui)
         {
-            table0 = (from anim in gui.Elements("anim")
+            table0 = (from anim in gui.anims
                       select new Entry0
                       {
-                          strName = CacheString(anim.Attribute("name").Value),
-                          id = (int)anim.Attribute("id"),
-                          table2subcount = (short)anim.Attribute("panesubcount"),
-                          table1count = (short)anim.Elements("sequence").Count(),
-                          table2count = (short)anim.Elements("pane").Count(),
-                          table5count = (short)anim.Elements("pane").Elements("state").Elements("animatedproperty").Count()
-                      }
-                      ).ToList();
-            table1 = (from seq in gui.Elements("anim").Elements("sequence")
+                          strName = cacheString[anim.name],
+                          id = anim.id,
+                          table2subcount = (short)anim.table2subcount,
+                          table1count = (short)anim.seqs.Count,
+                          table2count = (short)anim.panes.Count,
+                          table5count = (short)anim.panes.SelectMany(pane => pane.states).SelectMany(state => state.animprops).Count()
+                      }).ToList();
+            table1 = (from seq in gui.anims.SelectMany(anim => anim.seqs)
                       select new Entry1
                       {
-                          strName = CacheString(seq.Attribute("name").Value),
-                          id = (int)seq.Attribute("id"),
-                          maxframes = (int)seq.Attribute("maxframes")
-                      }
-                      ).ToList();
-            table2 = (from pane in gui.Elements("anim").Elements("pane")
+                          strName = cacheString[seq.name],
+                          id = seq.id,
+                          maxframes = seq.maxframes
+                      }).ToList();
+            table2 = (from pane in guixml.Elements("anim").Elements("pane")
                       let maps = pane.Elements("map")
                       let something5 = pane.Element("something5")
                       select new Entry2
@@ -141,7 +139,7 @@ namespace GUI_Investigator
                             : -1
                       }
                       ).ToList();
-            table3 = (from state in gui.Elements("anim").Elements("pane").Elements("state")
+            table3 = (from state in guixml.Elements("anim").Elements("pane").Elements("state")
                       select new Entry3
                       {
                           table4count = (byte)state.Elements("property").Count(),
@@ -153,7 +151,7 @@ namespace GUI_Investigator
                       ).ToList();
 
             // tables 4-6 are deferred until later
-            table7 = (from pane in gui.Elements("pane")
+            table7 = (from pane in guixml.Elements("pane")
                       select new Entry7
                       {
                           id = (int)pane.Attribute("id"),
@@ -164,7 +162,7 @@ namespace GUI_Investigator
                           tagHash = FromHex(pane.Attribute("type").Value)
                       }
                       ).ToList();
-            table8 = (from evt in gui.Elements("event")
+            table8 = (from evt in guixml.Elements("event")
                       select new Entry8
                       {
                           id = (int)evt.Attribute("id"),
@@ -173,7 +171,7 @@ namespace GUI_Investigator
                           table9entry = (int)evt.Attribute("t9entry")
                       }
                       ).ToList();
-            table9 = (from evt in gui.Elements("event")
+            table9 = (from evt in guixml.Elements("event")
                       where (int)evt.Attribute("type") == 2
                       let unks = evt.Attribute("e9unks").Value.Split(',').Select(int.Parse).ToList()
                       select new Entry9
@@ -186,20 +184,20 @@ namespace GUI_Investigator
                           table5count = evt.Elements("animatedproperty").Count()
                       }
                       ).ToList();
-            table11 = (from e11 in gui.Elements("misc").Elements("e11")
+            table11 = (from e11 in guixml.Elements("misc").Elements("e11")
                        select new Entry11
                        {
                            id = (int)e11.Attribute("id")
                        }
                        ).ToList();
-            table15 = (from e15 in gui.Elements("misc").Elements("e15")
+            table15 = (from e15 in guixml.Elements("misc").Elements("e15")
                        select new Entry15
                        {
                            id = (int)e15.Attribute("id"),
                            unk = (int)e15.Attribute("unk")
                        }
                        ).ToList();
-            table16 = (from e16 in gui.Elements("misc").Elements("e16")
+            table16 = (from e16 in guixml.Elements("misc").Elements("e16")
                        let unks = e16.Attribute("unks").Value.Split(',').Select(int.Parse).ToList()
                        select new Entry16
                        {
@@ -209,7 +207,7 @@ namespace GUI_Investigator
                            unk3 = unks[3]
                        }
                        ).ToList();
-            table17 = (from e17 in gui.Elements("misc").Elements("e17")
+            table17 = (from e17 in guixml.Elements("misc").Elements("e17")
                        select new Entry17
                        {
                            id = (int)e17.Attribute("id"),
@@ -218,7 +216,7 @@ namespace GUI_Investigator
                            id2 = (int)e17.Attribute("id2")
                        }
                       ).ToList();
-            table18 = (from e18 in gui.Element("misc").Elements("e18")
+            table18 = (from e18 in guixml.Element("misc").Elements("e18")
                        select new Entry18
                        {
                            id = (int)e18.Attribute("id"),
@@ -230,10 +228,10 @@ namespace GUI_Investigator
                            strName = CacheString(e18.Attribute("name").Value)
                        }
                        ).ToList();
-            table19 = (from e19 in gui.Element("misc").Elements("e19")
+            table19 = (from e19 in guixml.Element("misc").Elements("e19")
                        select new Entry19 { strPath = CacheString(e19.Attribute("path").Value) }
                        ).ToList();
-            table20 = (from e20 in gui.Element("misc").Elements("e20")
+            table20 = (from e20 in guixml.Element("misc").Elements("e20")
                        let unks = e20.Attribute("unks").Value.Split(',').Select(int.Parse).ToList()
                        select new Entry20
                        {
@@ -244,14 +242,14 @@ namespace GUI_Investigator
                            unk3 = unks[3]
                        }
                        ).ToList();
-            table22 = (from e22 in gui.Element("misc").Elements("e22")
+            table22 = (from e22 in guixml.Element("misc").Elements("e22")
                        select new Entry22
                        {
                            unk = (int)e22.Attribute("unk"),
                            strPath = CacheString(e22.Attribute("path").Value)
                        }
                        ).ToList();
-            table24 = (from e24 in gui.Element("misc").Elements("e24")
+            table24 = (from e24 in guixml.Element("misc").Elements("e24")
                        select new Entry24
                        {
                            dst = Rectangle.Parse(e24.Attribute("dst").Value),
@@ -260,12 +258,12 @@ namespace GUI_Investigator
                        ).ToList();
 
             // now we jump onto the properties
-            var props = gui.Elements("anim").Elements("pane").Elements("property")
-                         .Concat(gui.Elements("anim").Elements("pane").Elements("state").Elements("property"))
-                         .Concat(gui.Elements("pane").Elements("property"));
-            var animprops = gui.Elements("anim").Elements("pane").Elements("state").Elements("animatedproperty")
-                             .Concat(gui.Elements("event").Elements("animatedproperty"))
-                             .Concat(gui.Elements("pane").Elements("animatedproperty"));
+            var props = guixml.Elements("anim").Elements("pane").Elements("property")
+                         .Concat(guixml.Elements("anim").Elements("pane").Elements("state").Elements("property"))
+                         .Concat(guixml.Elements("pane").Elements("property"));
+            var animprops = guixml.Elements("anim").Elements("pane").Elements("state").Elements("animatedproperty")
+                             .Concat(guixml.Elements("event").Elements("animatedproperty"))
+                             .Concat(guixml.Elements("pane").Elements("animatedproperty"));
 
             table4 = (from prop in props
                       select new Entry4
@@ -332,18 +330,18 @@ namespace GUI_Investigator
                 table9[i + 1].table5start = table9[i].table5start + table9[i].table5count;
             }
 
-            var somecounts = gui.Attribute("somecounts").Value.Split(',').Select(int.Parse).ToList();
+            var somecounts = guixml.Attribute("somecounts").Value.Split(',').Select(int.Parse).ToList();
             header = new Header
             {
-                flag0 = (byte)(int)gui.Attribute("flag0"),
-                flag1 = (byte)(int)gui.Attribute("flag1"),
-                filenameHash = FromHex(gui.Attribute("id").Value),
+                flag0 = (byte)(int)guixml.Attribute("flag0"),
+                flag1 = (byte)(int)guixml.Attribute("flag1"),
+                filenameHash = FromHex(guixml.Attribute("id").Value),
                 somecount0 = somecounts[0],
                 somecount1 = somecounts[1],
                 somecount2 = somecounts[2],
                 somecount3 = somecounts[3],
-                otherFlags = (int)gui.Attribute("otherflags"),
-                otherCount = (int)gui.Attribute("othercount"),
+                otherFlags = (int)guixml.Attribute("otherflags"),
+                otherCount = (int)guixml.Attribute("othercount"),
                 table0count = table0.Count,
                 table1count = table1.Count,
                 table2count = table2.Count,

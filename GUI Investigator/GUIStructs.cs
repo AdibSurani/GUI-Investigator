@@ -224,12 +224,12 @@ namespace GUI_Investigator
     struct Rectangle // Note: This can also be a colour. The -0 hack is required to ensure a byte-for-byte match
     {
         public float X0, Y0, X1, Y1;
-        public static string f(float f) => BitConverter.ToInt32(BitConverter.GetBytes(f), 0) == int.MinValue ? "-0" : f.ToString("G9");
-        public static float f(string s) => s == "-0" ? BitConverter.ToSingle(BitConverter.GetBytes(int.MinValue), 0) : float.Parse(s);
-        public override string ToString() => $"{f(X0)},{f(Y0)},{f(X1)},{f(Y1)}";
+        public static string F(float f) => BitConverter.ToInt32(BitConverter.GetBytes(f), 0) == int.MinValue ? "-0" : f.ToString("G9");
+        public static float F(string s) => s == "-0" ? BitConverter.ToSingle(BitConverter.GetBytes(int.MinValue), 0) : float.Parse(s);
+        public override string ToString() => $"{F(X0)},{F(Y0)},{F(X1)},{F(Y1)}";
         public static Rectangle Parse(string s)
         {
-            var fs = s.Split(',').Select(f).ToList();
+            var fs = s.Split(',').Select(F).ToList();
             return new Rectangle { X0 = fs[0], Y0 = fs[1], X1 = fs[2], Y1 = fs[3] };
         }
     }
