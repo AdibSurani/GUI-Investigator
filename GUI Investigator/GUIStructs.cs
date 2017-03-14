@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Xml;
 
 namespace GUI_Investigator
 {
@@ -221,15 +222,13 @@ namespace GUI_Investigator
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct Rectangle // Note: This can also be a colour. The -0 hack is required to ensure a byte-for-byte match
+    struct Rectangle // Note: This can also be a colour. XmlConvert is used to preserve negative zeros
     {
         public float X0, Y0, X1, Y1;
-        public static string F(float f) => BitConverter.ToInt32(BitConverter.GetBytes(f), 0) == int.MinValue ? "-0" : f.ToString("G9");
-        public static float F(string s) => s == "-0" ? BitConverter.ToSingle(BitConverter.GetBytes(int.MinValue), 0) : float.Parse(s);
-        public override string ToString() => $"{F(X0)},{F(Y0)},{F(X1)},{F(Y1)}";
+        public override string ToString() => string.Join(",", new[] { X0, Y0, X1, Y1 }.Select(XmlConvert.ToString));
         public static Rectangle Parse(string s)
         {
-            var fs = s.Split(',').Select(F).ToList();
+            var fs = s.Split(',').Select(XmlConvert.ToSingle).ToList();
             return new Rectangle { X0 = fs[0], Y0 = fs[1], X1 = fs[2], Y1 = fs[3] };
         }
     }

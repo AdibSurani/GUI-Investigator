@@ -60,7 +60,7 @@ namespace GUI_Investigator
         public int next;
         public int child;
         public List<Property> props;
-        public List<AnimatedProperty> animprops;
+        public AnimatedProperty animprop;
     }
 
     class Anim

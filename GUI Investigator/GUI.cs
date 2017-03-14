@@ -242,7 +242,7 @@ namespace GUI_Investigator
                                      }).ToList(),
                              panes = (from n2 in Range(e0.table2start, e0.table2count)
                                       let e2 = table2[n2]
-                                      let e2tex = e2.texture == -1 || e2.tagHash == 0x2787DB24 ? null : GetOtherData33(e2.texture)
+                                      let e2tex = e2.texture == -1 || e2.tagHash == 0x2787DB24 ? new List<Rectangle>() : GetOtherData33(e2.texture)
                                       let e2val = e2.tagHash != 0x2787DB24 ? null : GetOtherData32(e2.texture)
                                       select new Anim.AnimPane
                                       {
@@ -318,8 +318,8 @@ namespace GUI_Investigator
                               name = dicString[e7.strName],
                               next = e7.next,
                               child = e7.child,
-                              //props =,
-                              //animprops=
+                              props = Range(e7.table4start, e7.table4count).Select(GetProperty).ToList(),
+                              animprop = GetAnimatedProperty(header.table5subcount + n7)
                           }).ToList();
 
             var misc = new XElement("misc",
@@ -422,7 +422,7 @@ namespace GUI_Investigator
 
             Debug.WriteLine($"{header.filenameHash:X8}\t{filename}");
 
-            var recon = new Reconstruction(guixml, gui);
+            var recon = new Reconstruction(gui);
             Debug.Assert(recon.table0.TableEqual(table0));
             Debug.Assert(recon.table1.TableEqual(table1));
             Debug.Assert(recon.table2.TableEqual(table2));
