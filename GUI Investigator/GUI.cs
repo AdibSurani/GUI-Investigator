@@ -28,7 +28,7 @@ namespace GUI_Investigator
         {
             var header = Read<Header>(0);
             var spl = Encoding.ASCII.GetString(bytes, header.dataStringOffset, header.table24offset - header.dataStringOffset).Split('\0');
-            var dicString = spl.Select((str, i) => Tuple.Create(spl.Take(i).Sum(s => s.Length + 1), str)).ToDictionary(p => p.Item1, p => p.Item2);
+            var dicString = spl.Select((str, i) => (spl.Take(i).Sum(s => s.Length + 1), str)).ToDictionary(p => p.Item1, p => p.Item2);
 
             #region a bunch of local functions
             T Read<T>(int baseOffset, int itemOffset = 0)
