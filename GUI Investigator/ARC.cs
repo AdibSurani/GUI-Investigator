@@ -46,6 +46,7 @@ namespace GUI_Investigator
             [GetHash("rCameraList")] = ".lcm",
             [GetHash("rCharacter")] = ".xfsc",
             [GetHash("rCollision")] = ".sbc",
+            [GetHash("rEffect2D")] = ".e2d",
             [GetHash("rEffectAnim")] = ".ean",
             [GetHash("rEffectList")] = ".efl",
             [GetHash("rGUI")] = ".gui",

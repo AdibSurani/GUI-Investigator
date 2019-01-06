@@ -8,7 +8,7 @@ namespace GUI_Investigator
     class Header
     {
         public int magic = 0x495547; // "GUI"
-        public int unk0 = 0x21F13;
+        public int unk0 = 0x22715; // was 0x21F13 for DGS1
         public int filesize;
         public byte flag0; // 0 or 2 -- needs more investigation
         public byte flag1; // 0 or 2 -- needs more investigation
@@ -149,6 +149,7 @@ namespace GUI_Investigator
     [StructLayout(LayoutKind.Sequential)]
     class Entry4
     {
+        public int zero_hax; // DGS1 doesn't have this
         public int dataType;
         public int zero;
         public int strProperty;
@@ -158,10 +159,10 @@ namespace GUI_Investigator
     [StructLayout(LayoutKind.Sequential)]
     class Entry5
     {
+        public int zero_hax; // DGS1 has this after zero0
         public byte dataType;
         public byte count; // counts table6count as well as number of dataItems to take
         public short zero0;
-        public int zero1;
         public int id; // can be automatically determined?
         public int strProperty;
         public int table6start;
@@ -296,8 +297,8 @@ namespace GUI_Investigator
     [StructLayout(LayoutKind.Sequential)]
     class Entry22 // size 12
     {
-        public int unk;
-        public int zero;
+        public int unk0;
+        public int unk1; // always zero in DGS1
         public int strPath;
     }
 

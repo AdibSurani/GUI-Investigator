@@ -106,7 +106,7 @@ namespace GUI_Investigator
     public class Parsed18 {[XmlAttribute] public int id, width, height;[XmlAttribute] public float sclX, sclY;[XmlAttribute] public string name, path; }
     public class Parsed19 {[XmlAttribute] public string path; }
     public class Parsed20 {[XmlAttribute] public int unk0, unk1, unk2, unk3, unkHash; }
-    public class Parsed22 {[XmlAttribute] public int unk;[XmlAttribute] public string path; }
+    public class Parsed22 {[XmlAttribute] public int unk0, unk1;[XmlAttribute] public string path; }
     public class Parsed24 { public Rectangle dst, src; } // @todo: figure out how to XmlAttribute these
 
     public class Unknown

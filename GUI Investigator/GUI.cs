@@ -44,7 +44,7 @@ namespace GUI_Investigator
             string GetData(int dataType, int dataOffset, int extraOffset = 0)
             {
                 dataOffset += (dataType == 3 ? 1 : dataType == 4 ? 16 : 4) * extraOffset;
-                switch (dataType)
+                switch ((byte)dataType)
                 {
                     case 2: return XmlConvert.ToString(Read<float>(header.data32bitOffset + dataOffset));
                     case 3: return XmlConvert.ToString(Read<byte>(header.dataBoolOffset + dataOffset) == 1);
@@ -58,7 +58,7 @@ namespace GUI_Investigator
 
             int[] GetMiscInt(int offset)
             {
-                return new[] { Read<int>(header.dataMiscOffset + offset) };
+                return Range(0, 4).Select(i => Read<int>(header.dataMiscOffset + offset, i)).ToArray();
             }
 
             List<Rectangle> GetRectList(int offset)
@@ -206,7 +206,7 @@ namespace GUI_Investigator
                     parsed20 = (from e20 in ReadMultiple<Entry20>(header.table20offset, header.table20count)
                                 select new Parsed20 { unkHash = e20.unkHash, unk0 = e20.unk0, unk1 = e20.unk1, unk2 = e20.unk2, unk3 = e20.unk3 }).ToList(), //hash
                     parsed22 = (from e22 in ReadMultiple<Entry22>(header.table22offset, header.table22count)
-                                select new Parsed22 { unk = e22.unk, path = dicString[e22.strPath] }).ToList(),
+                                select new Parsed22 { unk0 = e22.unk0, unk1 = e22.unk1, path = dicString[e22.strPath] }).ToList(),
                     parsed24 = (from e24 in ReadMultiple<Entry24>(header.table24offset, header.table24size / 52)
                                 select new Parsed24 { dst = e24.dst, src = e24.src }).ToList()
                 }
@@ -268,7 +268,7 @@ namespace GUI_Investigator
                             bw.Write(new byte[8]);
                             return ms.ToArray();
                         }
-                    case int[] arr: return BitConverter.GetBytes(arr[0]).Concat(new byte[12]).ToArray();
+                    case int[] arr: return arr.SelectMany(BitConverter.GetBytes).ToArray();
                     case byte[] b: return b;
                     default: throw new NotImplementedException();
                 }
@@ -276,7 +276,7 @@ namespace GUI_Investigator
 
             int GetDataOffset(int datatype, string s)
             {
-                switch (datatype)
+                switch ((byte)datatype)
                 {
                     case 2: return cache32bit[Convert.ToBase64String(BitConverter.GetBytes(XmlConvert.ToSingle(s)))];
                     case 3: return cacheBool[new[] { bool.Parse(s) }];
@@ -456,7 +456,7 @@ namespace GUI_Investigator
             table20 = (from e20 in gui.unknown.parsed20
                        select new Entry20 { unkHash = e20.unkHash, unk0 = e20.unk0, unk1 = e20.unk1, unk2 = e20.unk2, unk3 = e20.unk3 }).ToList(); // hash
             table22 = (from e22 in gui.unknown.parsed22
-                       select new Entry22 { unk = e22.unk, strPath = cacheString[e22.path] }).ToList();
+                       select new Entry22 { unk0 = e22.unk0, unk1 = e22.unk1, strPath = cacheString[e22.path] }).ToList();
             table24 = (from e24 in gui.unknown.parsed24
                        select new Entry24 { dst = e24.dst, src = e24.src }).ToList();
 
