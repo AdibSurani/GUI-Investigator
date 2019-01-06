@@ -253,7 +253,7 @@ namespace GUI_Investigator
     [StructLayout(LayoutKind.Sequential)]
     class Entry17 // size 32
     {
-        public int id, zero1, strName, varHash, zero4, zero5, id2, zero7;
+        public int id, zero1, strName, varHash, zero4, zero5, id2;
     }
 
     [StructLayout(LayoutKind.Sequential)]
