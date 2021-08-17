@@ -40,7 +40,7 @@ namespace GUI_Investigator
         public class T9Values
         {
             [XmlAttribute]
-            public int unk0, unk1, unk2, unk3, maxframes;
+            public int unk0, unk1, unk2, unk3, unk4, maxframes;
             [XmlElement("animprop")]
             public List<AnimatedProperty> animprops;
         }
@@ -79,7 +79,7 @@ namespace GUI_Investigator
         public class AnimPane : Pane
         {
             [XmlElement]
-            public int[] something5;
+            public long[] something5;
             [XmlElement("map")]
             public List<Rectangle> maps;
             [XmlElement("state")]
@@ -103,11 +103,12 @@ namespace GUI_Investigator
     public class Parsed15 {[XmlAttribute] public int id, unk; }
     public class Parsed16 {[XmlAttribute] public int unk0, unk1, unk2, unk3; }
     public class Parsed17 {[XmlAttribute] public int id, id2, varHash;[XmlAttribute] public string name; }
-    public class Parsed18 {[XmlAttribute] public int id, width, height;[XmlAttribute] public float sclX, sclY;[XmlAttribute] public string name, path; }
-    public class Parsed19 {[XmlAttribute] public string path; }
+    public class Parsed18 {[XmlAttribute] public int id, unk, width, height;[XmlAttribute] public float sclX, sclY, sclZ, sclW;[XmlAttribute] public string name, path; }
+    //public class Parsed18 {[XmlAttribute] public int id, width, height;[XmlAttribute] public Rectangle scl;[XmlAttribute] public string name, path; }
+    public class Parsed19 {[XmlAttribute] public int unk;[XmlAttribute] public string path; }
     public class Parsed20 {[XmlAttribute] public int unk0, unk1, unk2, unk3, unkHash; }
     public class Parsed22 {[XmlAttribute] public int unk;[XmlAttribute] public string path; }
-    public class Parsed24 { public Rectangle dst, src; } // @todo: figure out how to XmlAttribute these
+    public class Parsed24 { public Rectangle dst, unk, src; } // @todo: figure out how to XmlAttribute these
 
     public class Unknown
     {

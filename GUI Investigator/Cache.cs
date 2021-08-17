@@ -17,6 +17,7 @@ namespace GUI_Investigator
         {
             get
             {
+                if (key is null) return -1;
                 if (dic.TryGetValue(key, out int offset)) return offset;
                 offset = Length;
                 dic.Add(key, offset);

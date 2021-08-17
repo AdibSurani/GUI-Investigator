@@ -14,15 +14,14 @@ namespace GUI_Investigator
         class Header
         {
             public int magic = 0x435241;
-            public short version = 0x11;
+            public short version = 0x07;
             public short entryCount;
-            int padding;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         public class FileMetadata
         {
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
             public string filename;
             public uint extensionHash;
             public int compressedSize;
@@ -46,6 +45,7 @@ namespace GUI_Investigator
             [GetHash("rCameraList")] = ".lcm",
             [GetHash("rCharacter")] = ".xfsc",
             [GetHash("rCollision")] = ".sbc",
+            [GetHash("rEffect2D")] = ".e2d",
             [GetHash("rEffectAnim")] = ".ean",
             [GetHash("rEffectList")] = ".efl",
             [GetHash("rGUI")] = ".gui",
@@ -58,10 +58,12 @@ namespace GUI_Investigator
             [GetHash("rModel")] = ".mod",
             [GetHash("rMotionList")] = ".lmt",
             [GetHash("rPropParam")] = ".prp",
+            [GetHash("rRenderTargetTexture")] = ".rtex",
             [GetHash("rScheduler")] = ".sdl",
             [GetHash("rSoundBank")] = ".sbkr",
             [GetHash("rSoundRequest")] = ".srqr",
             [GetHash("rSoundSourceADPCM")] = ".mca",
+            [GetHash("rSoundSourceMSADPCM")] = ".xsew",
             [GetHash("rTexture")] = ".tex"
         };
 
@@ -71,7 +73,7 @@ namespace GUI_Investigator
             {
                 var header = br.ReadStruct<Header>();
                 var lst = Enumerable.Range(0, header.entryCount).Select(_ => br.ReadStruct<FileMetadata>()).ToList();
-                AddRange(lst.Select(metadata =>
+                AddRange(lst.Where(metadata => metadata.extensionHash == 0x22948394).Select(metadata =>
                 {
                     // zlib header
                     br.BaseStream.Position = metadata.offset + 1;

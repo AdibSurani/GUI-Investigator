@@ -13,7 +13,7 @@ namespace GUI_Investigator
     public class GUI
     {
         [XmlAttribute]
-        public int filenameHash, flag0, flag1, otherflags;
+        public int filenameHash, flag0, flag1, otherflags, width, height;
         [XmlAttribute]
         public int somecount0, somecount1, somecount2, somecount3, othercount;
         [XmlElement("anim")]
@@ -24,19 +24,21 @@ namespace GUI_Investigator
         public List<Event> events;
         public Unknown unknown;
 
+        const int Entry24StructSize = 48;
+
         public static GUI FromByteArray(byte[] bytes)
         {
             var header = Read<Header>(0);
-            var spl = Encoding.ASCII.GetString(bytes, header.dataStringOffset, header.table24offset - header.dataStringOffset).Split('\0');
+            var spl = Encoding.ASCII.GetString(bytes, (int)header.dataStringOffset, (int)(header.table24offset - header.dataStringOffset)).Split('\0');
             var dicString = spl.Select((str, i) => (spl.Take(i).Sum(s => s.Length + 1), str)).ToDictionary(p => p.Item1, p => p.Item2);
 
             #region a bunch of local functions
-            T Read<T>(int baseOffset, int itemOffset = 0)
+            T Read<T>(long baseOffset, int itemOffset = 0)
             {
-                return bytes.ToStruct<T>(baseOffset, itemOffset);
+                return bytes.ToStruct<T>((int)baseOffset, itemOffset);
             }
 
-            List<T> ReadMultiple<T>(int offset, int count)
+            List<T> ReadMultiple<T>(long offset, int count)
             {
                 return Range(0, count).Select(i => Read<T>(offset, i)).ToList();
             }
@@ -44,7 +46,7 @@ namespace GUI_Investigator
             string GetData(int dataType, int dataOffset, int extraOffset = 0)
             {
                 dataOffset += (dataType == 3 ? 1 : dataType == 4 ? 16 : 4) * extraOffset;
-                switch (dataType)
+                switch ((byte)dataType)
                 {
                     case 2: return XmlConvert.ToString(Read<float>(header.data32bitOffset + dataOffset));
                     case 3: return XmlConvert.ToString(Read<byte>(header.dataBoolOffset + dataOffset) == 1);
@@ -56,9 +58,9 @@ namespace GUI_Investigator
                 }
             };
 
-            int[] GetMiscInt(int offset)
+            long[] GetMiscInt(int offset)
             {
-                return new[] { Read<int>(header.dataMiscOffset + offset) };
+                return new[] { Read<long>(header.dataMiscOffset + offset) };
             }
 
             List<Rectangle> GetRectList(int offset)
@@ -103,11 +105,13 @@ namespace GUI_Investigator
                 flag0 = header.flag0,
                 flag1 = header.flag1,
                 otherflags = header.otherFlags,
+                width = header.width,
+                height = header.height,
                 somecount0 = header.somecount0,
                 somecount1 = header.somecount1,
                 somecount2 = header.somecount2,
                 somecount3 = header.somecount3,
-                othercount = header.otherCount,
+                othercount = (int)header.otherCount,
                 anims = (from e0 in ReadMultiple<Entry0>(header.table0offset, header.table0count)
                          select new Anim
                          {
@@ -164,6 +168,7 @@ namespace GUI_Investigator
                                   unk1 = e9.unk1,
                                   unk2 = e9.unk2,
                                   unk3 = e9.unk3,
+                                  unk4 = e9.unk4,
                                   maxframes = e9.maxframes,
                                   animprops = Range(e9.table5start, e9.table5count).Select(GetAnimatedProperty).ToList()
                               },
@@ -178,7 +183,7 @@ namespace GUI_Investigator
                              next = e7.next,
                              child = e7.child,
                              props = Range(e7.table4start, e7.table4count).Select(GetProperty).ToList(),
-                             animprop = GetAnimatedProperty(header.table5subcount + n7)
+                             animprop = GetAnimatedProperty((int)header.table5subcount + n7)
                          }).ToList(),
                 unknown = new Unknown
                 {
@@ -194,21 +199,26 @@ namespace GUI_Investigator
                                 select new Parsed18
                                 {
                                     id = e18.id,
+                                    unk = e18.unk,
                                     width = e18.width,
                                     height = e18.height,
                                     sclX = e18.scaleX,
                                     sclY = e18.scaleY,
+                                    sclZ = e18.scaleZ,
+                                    sclW = e18.scaleW,
+                                    //scl = e18.scale,
                                     name = dicString[e18.strName],
                                     path = e18.strPath == -1 ? null : dicString[e18.strPath]
                                 }).ToList(),
                     parsed19 = (from e19 in ReadMultiple<Entry19>(header.table19offset, header.table19count)
-                                select new Parsed19 { path = dicString[e19.strPath] }).ToList(),
+                                //select new Parsed19 { path = dicString[e19.strPath] }).ToList(),
+                                select new Parsed19 { unk = e19.unk, path = e19.strPath == -1 ? null : dicString[e19.strPath] }).ToList(),
                     parsed20 = (from e20 in ReadMultiple<Entry20>(header.table20offset, header.table20count)
                                 select new Parsed20 { unkHash = e20.unkHash, unk0 = e20.unk0, unk1 = e20.unk1, unk2 = e20.unk2, unk3 = e20.unk3 }).ToList(), //hash
                     parsed22 = (from e22 in ReadMultiple<Entry22>(header.table22offset, header.table22count)
                                 select new Parsed22 { unk = e22.unk, path = dicString[e22.strPath] }).ToList(),
-                    parsed24 = (from e24 in ReadMultiple<Entry24>(header.table24offset, header.table24size / 52)
-                                select new Parsed24 { dst = e24.dst, src = e24.src }).ToList()
+                    parsed24 = (from e24 in ReadMultiple<Entry24>(header.table24offset, header.table24size / Entry24StructSize)
+                                select new Parsed24 { dst = e24.dst, unk = e24.unk, src = e24.src }).ToList()
                 }
             };
         }
@@ -264,11 +274,11 @@ namespace GUI_Investigator
                             bw.Write(lst.Count);
                             bw.Write(lst.Count == 0 ? 0 : miscCount);
                             foreach (var r in lst) bw.Write(r.StructToArray());
-                            miscCount += lst.Count;
+                            miscCount += lst.Count * 6 - 2;
                             bw.Write(new byte[8]);
                             return ms.ToArray();
                         }
-                    case int[] arr: return BitConverter.GetBytes(arr[0]).Concat(new byte[12]).ToArray();
+                    case long[] arr: return BitConverter.GetBytes(arr[0]).Concat(new byte[8]).ToArray();
                     case byte[] b: return b;
                     default: throw new NotImplementedException();
                 }
@@ -276,7 +286,7 @@ namespace GUI_Investigator
 
             int GetDataOffset(int datatype, string s)
             {
-                switch (datatype)
+                switch ((byte)datatype)
                 {
                     case 2: return cache32bit[Convert.ToBase64String(BitConverter.GetBytes(XmlConvert.ToSingle(s)))];
                     case 3: return cacheBool[new[] { bool.Parse(s) }];
@@ -429,6 +439,7 @@ namespace GUI_Investigator
                           unk1 = evt.t9values.unk1,
                           unk2 = evt.t9values.unk2,
                           unk3 = evt.t9values.unk3,
+                          unk4 = evt.t9values.unk4,
                           maxframes = evt.t9values.maxframes,
                           table5count = evt.t9values.animprops.Count
                       }).ToList();
@@ -444,21 +455,25 @@ namespace GUI_Investigator
                        select new Entry18
                        {
                            id = e18.id,
+                           unk = e18.unk,
                            width = (short)e18.width,
                            height = (short)e18.height,
                            scaleX = e18.sclX,
                            scaleY = e18.sclY,
+                           scaleZ = e18.sclZ,
+                           scaleW = e18.sclW,
+                           //scale = e18.scl,
                            strPath = e18.path == null ? -1 : cacheString[e18.path],
                            strName = cacheString[e18.name]
                        }).ToList();
             table19 = (from e19 in gui.unknown.parsed19
-                       select new Entry19 { strPath = cacheString[e19.path] }).ToList();
+                       select new Entry19 { unk = e19.unk, strPath = cacheString[e19.path] }).ToList();
             table20 = (from e20 in gui.unknown.parsed20
                        select new Entry20 { unkHash = e20.unkHash, unk0 = e20.unk0, unk1 = e20.unk1, unk2 = e20.unk2, unk3 = e20.unk3 }).ToList(); // hash
             table22 = (from e22 in gui.unknown.parsed22
                        select new Entry22 { unk = e22.unk, strPath = cacheString[e22.path] }).ToList();
             table24 = (from e24 in gui.unknown.parsed24
-                       select new Entry24 { dst = e24.dst, src = e24.src }).ToList();
+                       select new Entry24 { dst = e24.dst, unk = e24.unk, src = e24.src }).ToList();
 
             table4 = lazy4.ToList();
             table5 = lazy5.ToList();
@@ -511,6 +526,8 @@ namespace GUI_Investigator
                 somecount2 = gui.somecount2,
                 somecount3 = gui.somecount3,
                 otherFlags = gui.otherflags,
+                width = gui.width,
+                height = gui.height,
                 otherCount = gui.othercount,
                 table5subcount = table5.Count - table7.Count,
                 table7count2 = table7.Count
@@ -518,7 +535,7 @@ namespace GUI_Investigator
 
             using (var bw = new BinaryWriter(new MemoryStream()))
             {
-                void WriteBytes(ref int offset, params byte[][] buffers)
+                void WriteBytesI(ref int offset, params byte[][] buffers)
                 {
                     offset = (int)bw.BaseStream.Position;
                     foreach (var item in buffers)
@@ -526,7 +543,15 @@ namespace GUI_Investigator
                     while (bw.BaseStream.Position % 16 != 0)
                         bw.BaseStream.WriteByte(0);
                 }
-                void WriteTable<T>(ref int offset, ref int count, List<T> table)
+                void WriteBytes(ref long offset, params byte[][] buffers)
+                {
+                    offset = (int)bw.BaseStream.Position;
+                    foreach (var item in buffers)
+                        bw.Write(item);
+                    while (bw.BaseStream.Position % 16 != 0)
+                        bw.BaseStream.WriteByte(0);
+                }
+                void WriteTable<T>(ref long offset, ref int count, List<T> table)
                 {
                     count = table.Count;
                     WriteBytes(ref offset, table.Select(item => item.StructToArray()).ToArray());
@@ -563,8 +588,8 @@ namespace GUI_Investigator
                 WriteBytes(ref header.dataMiscOffset, cacheMisc.Data);
                 WriteBytes(ref header.dataStringOffset, cacheString.Data);
                 WriteTable(ref header.table24offset, ref header.table24size, table24);
-                header.table24size *= 52;
-                WriteBytes(ref header.filesize, new byte[0]);
+                header.table24size *= Entry24StructSize;
+                WriteBytesI(ref header.filesize, new byte[0]);
                 bw.BaseStream.Position = 0;
                 WriteBytes(ref header.zero3, header.StructToArray());
                 return ((MemoryStream)bw.BaseStream).ToArray();

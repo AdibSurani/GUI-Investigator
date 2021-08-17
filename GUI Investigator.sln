@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26228.4
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31613.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GUI Investigator", "GUI Investigator\GUI Investigator.csproj", "{96C02E66-D9C2-4CE4-AFB1-EFFB5ABC996D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GUI Investigator", "GUI Investigator\GUI Investigator.csproj", "{96C02E66-D9C2-4CE4-AFB1-EFFB5ABC996D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D8BE0D5B-6DC0-4731-90DD-BCB2C72AEE70}
 	EndGlobalSection
 EndGlobal
