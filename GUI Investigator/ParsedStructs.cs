@@ -49,9 +49,9 @@ namespace GUI_Investigator
     public class Pane
     {
         [XmlAttribute]
-        public int id, type, next, child;
+        public int id, next, child;
         [XmlAttribute]
-        public string name;
+        public string name, objType;
         [XmlElement("prop")]
         public List<Property> props;
         public AnimatedProperty animprop;
@@ -81,7 +81,7 @@ namespace GUI_Investigator
             [XmlElement]
             public long[] something5;
             [XmlElement("map")]
-            public List<Rectangle> maps;
+            public List<Vertex4D> maps;
             [XmlElement("state")]
             public List<State> states;
 
@@ -102,13 +102,12 @@ namespace GUI_Investigator
     public class Parsed11 {[XmlAttribute] public int id; }
     public class Parsed15 {[XmlAttribute] public int id, unk; }
     public class Parsed16 {[XmlAttribute] public int unk0, unk1, unk2, unk3; }
-    public class Parsed17 {[XmlAttribute] public int id, id2, varHash;[XmlAttribute] public string name; }
-    public class Parsed18 {[XmlAttribute] public int id, unk, width, height;[XmlAttribute] public float sclX, sclY, sclZ, sclW;[XmlAttribute] public string name, path; }
-    //public class Parsed18 {[XmlAttribute] public int id, width, height;[XmlAttribute] public Rectangle scl;[XmlAttribute] public string name, path; }
+    public class Parsed17 {[XmlAttribute] public int id, id2;[XmlAttribute] public string varType;[XmlAttribute] public string name; }
+    public class Parsed18 {[XmlAttribute] public int id, unk, width, height; public Vertex4D scale;[XmlAttribute] public string name, path; }
     public class Parsed19 {[XmlAttribute] public int unk;[XmlAttribute] public string path; }
-    public class Parsed20 {[XmlAttribute] public int unk0, unk1, unk2, unk3, unkHash; }
+    public class Parsed20 {[XmlAttribute] public int unk0, unk1, unk2, unk3;[XmlAttribute] public string fontFilterType; }
     public class Parsed22 {[XmlAttribute] public int unk;[XmlAttribute] public string path; }
-    public class Parsed24 { public Rectangle dst, unk, src; } // @todo: figure out how to XmlAttribute these
+    public class Parsed24 { public Vertex4D dst, unk, src; } // @todo: figure out how to XmlAttribute these
 
     public class Unknown
     {

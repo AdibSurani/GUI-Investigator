@@ -26,6 +26,17 @@ namespace GUI_Investigator
 
         const int Entry24StructSize = 48;
 
+        static Dictionary<uint, string> GuiObjectMap = new[]
+            {
+                "cGUIFontFilterBorder,cGUIFontFilterGradationOverlay,cGUIFontFilterShading,cGUIFontFilterShadow,cGUIFontFilterTextureBlend",
+                "cGUIInstAnimControl,cGUIInstAnimVariable,cGUIInstAnimation,cGUIInstBackLog,cGUIInstMessage,cGUIInstNull,cGUIInstRoot,cGUIInstScissorMask,cGUIInstText",
+                "cGUIObj2D,cGUIObjAppBGM,cGUIObjAppSE,cGUIObjBackLog,cGUIObjChildAnimationRoot,cGUIObjColorAdjust,cGUIObjDemoMessage,cGUIObjMessage,cGUIObjNull,cGUIObjOpeningDemoMessage",
+                "cGUIObjPairReasoning,cGUIObjPairReasoningTopicText,cGUIObjPolygon,cGUIObjRoot,cGUIObjScissorMask,cGUIObjScript,cGUIObjSysMsg,cGUIObjText,cGUIObjTexture,cGUIObjTextureSet",
+                "cGUIVarFloat,cGUIVarInt"
+            }
+            .SelectMany(s => s.Split(','))
+            .ToDictionary(ARC.GetHash);
+
         public static GUI FromByteArray(byte[] bytes)
         {
             var header = Read<Header>(0);
@@ -50,7 +61,7 @@ namespace GUI_Investigator
                 {
                     case 2: return XmlConvert.ToString(Read<float>(header.data32bitOffset + dataOffset));
                     case 3: return XmlConvert.ToString(Read<byte>(header.dataBoolOffset + dataOffset) == 1);
-                    case 4: return Read<Rectangle>(header.dataRectOffset + dataOffset).ToString();
+                    case 4: return Read<Vertex4D>(header.dataRectOffset + dataOffset).ToString();
                     case 15: return "";
                     case 17: return XmlConvert.ToString(dataOffset == 1);
                     case 18: return XmlConvert.ToString(dataOffset);
@@ -63,9 +74,9 @@ namespace GUI_Investigator
                 return new[] { Read<long>(header.dataMiscOffset + offset) };
             }
 
-            List<Rectangle> GetRectList(int offset)
+            List<Vertex4D> GetRectList(int offset)
             {
-                return Range(0, Read<int>(header.dataMiscOffset + offset)).Select(i => Read<Rectangle>(header.dataMiscOffset + offset + 8, i)).ToList();
+                return Range(0, Read<int>(header.dataMiscOffset + offset)).Select(i => Read<Vertex4D>(header.dataMiscOffset + offset + 8, i)).ToList();
             }
 
             Property GetProperty(int n4)
@@ -99,9 +110,11 @@ namespace GUI_Investigator
             }
             #endregion
 
+            string GetName(int x) => GUI.GuiObjectMap[(uint)x];
+
             return new GUI
             {
-                filenameHash = header.filenameHash, // hash
+                filenameHash = header.lastModified, // hash
                 flag0 = header.flag0,
                 flag1 = header.flag1,
                 otherflags = header.otherFlags,
@@ -128,12 +141,13 @@ namespace GUI_Investigator
                                      }).ToList(),
                              panes = (from n2 in Range(e0.table2start, e0.table2count)
                                       let e2 = Read<Entry2>(header.table2offset, n2)
-                                      let e2tex = e2.texture == -1 || e2.tagHash == 0x2787DB24 ? new List<Rectangle>() : GetRectList(e2.texture)
-                                      let e2val = e2.tagHash != 0x2787DB24 ? null : GetMiscInt(e2.texture)
+                                      let e2objType = GetName(e2.objTypeHash)
+                                      let e2tex = e2.texture == -1 || e2objType == "cGUIObjChildAnimationRoot" ? new List<Vertex4D>() : GetRectList(e2.texture)
+                                      let e2val = e2objType == "cGUIObjChildAnimationRoot" ? GetMiscInt(e2.texture) : null
                                       select new Anim.AnimPane
                                       {
                                           id = e2.id,
-                                          type = e2.tagHash, //hash
+                                          objType = e2objType,
                                           name = dicString[e2.strName],
                                           next = e2.next,
                                           child = e2.child,
@@ -178,7 +192,7 @@ namespace GUI_Investigator
                          select new Pane
                          {
                              id = e7.id,
-                             type = e7.tagHash, // X8
+                             objType = GetName(e7.instTypeHash), // X8
                              name = dicString[e7.strName],
                              next = e7.next,
                              child = e7.child,
@@ -194,7 +208,7 @@ namespace GUI_Investigator
                     parsed16 = (from e16 in ReadMultiple<Entry16>(header.table16offset, header.table16count)
                                 select new Parsed16 { unk0 = e16.unk0, unk1 = e16.unk1, unk2 = e16.unk2, unk3 = e16.unk3 }).ToList(),
                     parsed17 = (from e17 in ReadMultiple<Entry17>(header.table17offset, header.table17count)
-                                select new Parsed17 { id = e17.id, name = dicString[e17.strName], varHash = e17.varHash, id2 = e17.id2 }).ToList(), // hash
+                                select new Parsed17 { id = e17.id, name = dicString[e17.strName], varType = GetName(e17.varTypeHash), id2 = e17.id2 }).ToList(), // hash
                     parsed18 = (from e18 in ReadMultiple<Entry18>(header.table18offset, header.table18count)
                                 select new Parsed18
                                 {
@@ -202,11 +216,11 @@ namespace GUI_Investigator
                                     unk = e18.unk,
                                     width = e18.width,
                                     height = e18.height,
-                                    sclX = e18.scaleX,
-                                    sclY = e18.scaleY,
-                                    sclZ = e18.scaleZ,
-                                    sclW = e18.scaleW,
-                                    //scl = e18.scale,
+                                    //sclX = e18.scaleX,
+                                    //sclY = e18.scaleY,
+                                    //sclZ = e18.scaleZ,
+                                    //sclW = e18.scaleW,
+                                    scale = e18.scale,
                                     name = dicString[e18.strName],
                                     path = e18.strPath == -1 ? null : dicString[e18.strPath]
                                 }).ToList(),
@@ -214,7 +228,7 @@ namespace GUI_Investigator
                                 //select new Parsed19 { path = dicString[e19.strPath] }).ToList(),
                                 select new Parsed19 { unk = e19.unk, path = e19.strPath == -1 ? null : dicString[e19.strPath] }).ToList(),
                     parsed20 = (from e20 in ReadMultiple<Entry20>(header.table20offset, header.table20count)
-                                select new Parsed20 { unkHash = e20.unkHash, unk0 = e20.unk0, unk1 = e20.unk1, unk2 = e20.unk2, unk3 = e20.unk3 }).ToList(), //hash
+                                select new Parsed20 { fontFilterType = GetName(e20.fontFilterTypeHash), unk0 = e20.unk0, unk1 = e20.unk1, unk2 = e20.unk2, unk3 = e20.unk3 }).ToList(), //hash
                     parsed22 = (from e22 in ReadMultiple<Entry22>(header.table22offset, header.table22count)
                                 select new Parsed22 { unk = e22.unk, path = dicString[e22.strPath] }).ToList(),
                     parsed24 = (from e24 in ReadMultiple<Entry24>(header.table24offset, header.table24size / Entry24StructSize)
@@ -267,7 +281,7 @@ namespace GUI_Investigator
             {
                 switch (obj)
                 {
-                    case List<Rectangle> lst:
+                    case List<Vertex4D> lst:
                         var ms = new MemoryStream();
                         using (var bw = new BinaryWriter(ms))
                         {
@@ -290,7 +304,7 @@ namespace GUI_Investigator
                 {
                     case 2: return cache32bit[Convert.ToBase64String(BitConverter.GetBytes(XmlConvert.ToSingle(s)))];
                     case 3: return cacheBool[new[] { bool.Parse(s) }];
-                    case 4: return cacheRect[Rectangle.Parse(s).ToString()];
+                    case 4: return cacheRect[Vertex4D.Parse(s).ToString()];
                     case 17: return bool.Parse(s) ? 1 : 0;
                     case 18: return int.Parse(s);
                     default: return cache32bit[Convert.ToBase64String(BitConverter.GetBytes(int.Parse(s)))];
@@ -303,7 +317,7 @@ namespace GUI_Investigator
                 {
                     case 2: return cache32bit[Convert.ToBase64String(src.Select(XmlConvert.ToSingle).SelectMany(BitConverter.GetBytes).ToArray())];
                     case 3: return cacheBool[src.Select(bool.Parse).ToArray()];
-                    case 4: return cacheRect[string.Join(",", src.Select(Rectangle.Parse))];
+                    case 4: return cacheRect[string.Join(",", src.Select(Vertex4D.Parse))];
                     case 15: return cache32bit.Length;
                     default: return cache32bit[Convert.ToBase64String(src.Select(int.Parse).SelectMany(BitConverter.GetBytes).ToArray())];
                 }
@@ -363,7 +377,7 @@ namespace GUI_Investigator
                       select new Entry2
                       {
                           id = pane.id,
-                          tagHash = pane.type, // hash
+                          objTypeHash = (int)ARC.GetHash(pane.objType), // hash
                           next = pane.next,
                           child = pane.child,
                           table4count = (byte)pane.props.Count,
@@ -371,7 +385,7 @@ namespace GUI_Investigator
                                                from animprop in state.animprops
                                                select animprop).Count(),
                           strName = cacheString[pane.name],
-                          texture = pane.maps.Any() || pane.type == 0x4F7228FC
+                          texture = pane.maps.Any() || pane.objType == "cGUIObjTextureSet"
                             ? cacheMisc[pane.maps]
                             : pane.something5 != null
                             ? cacheMisc[pane.something5]
@@ -421,7 +435,7 @@ namespace GUI_Investigator
                           child = pane.child,
                           table4count = pane.props.Count,
                           strName = cacheString[pane.name],
-                          tagHash = pane.type // hash
+                          instTypeHash = (int)ARC.GetHash(pane.objType) // hash
                       }).ToList();
             table8 = (from evt in gui.events
                       select new Entry8
@@ -450,7 +464,7 @@ namespace GUI_Investigator
             table16 = (from e16 in gui.unknown.parsed16
                        select new Entry16 { unk0 = e16.unk0, unk1 = e16.unk1, unk2 = e16.unk2, unk3 = e16.unk3 }).ToList();
             table17 = (from e17 in gui.unknown.parsed17
-                       select new Entry17 { id = e17.id, strName = cacheString[e17.name], varHash = e17.varHash, id2 = e17.id2 }).ToList(); // hash
+                       select new Entry17 { id = e17.id, strName = cacheString[e17.name], varTypeHash = (int)ARC.GetHash(e17.varType), id2 = e17.id2 }).ToList(); // hash
             table18 = (from e18 in gui.unknown.parsed18
                        select new Entry18
                        {
@@ -458,18 +472,14 @@ namespace GUI_Investigator
                            unk = e18.unk,
                            width = (short)e18.width,
                            height = (short)e18.height,
-                           scaleX = e18.sclX,
-                           scaleY = e18.sclY,
-                           scaleZ = e18.sclZ,
-                           scaleW = e18.sclW,
-                           //scale = e18.scl,
+                           scale = e18.scale,
                            strPath = e18.path == null ? -1 : cacheString[e18.path],
                            strName = cacheString[e18.name]
                        }).ToList();
             table19 = (from e19 in gui.unknown.parsed19
                        select new Entry19 { unk = e19.unk, strPath = cacheString[e19.path] }).ToList();
             table20 = (from e20 in gui.unknown.parsed20
-                       select new Entry20 { unkHash = e20.unkHash, unk0 = e20.unk0, unk1 = e20.unk1, unk2 = e20.unk2, unk3 = e20.unk3 }).ToList(); // hash
+                       select new Entry20 { fontFilterTypeHash = (int)ARC.GetHash(e20.fontFilterType), unk0 = e20.unk0, unk1 = e20.unk1, unk2 = e20.unk2, unk3 = e20.unk3 }).ToList(); // hash
             table22 = (from e22 in gui.unknown.parsed22
                        select new Entry22 { unk = e22.unk, strPath = cacheString[e22.path] }).ToList();
             table24 = (from e24 in gui.unknown.parsed24
@@ -485,7 +495,7 @@ namespace GUI_Investigator
                 table0[i + 1].table1start = table0[i].table1start + table0[i].table1count;
                 table0[i + 1].table2start = table0[i].table2start + table0[i].table2count;
             }
-            var stuff = table0.SelectMany(e => Enumerable.Repeat(e.table1count, e.table2count)).ToList();
+            var stuff = table0.SelectMany(e => Repeat(e.table1count, e.table2count)).ToList();
             for (int i = 0; i < table2.Count - 1; i++)
             {
                 table2[i + 1].table4start = table2[i].table4start + table2[i].table4count;
@@ -520,7 +530,7 @@ namespace GUI_Investigator
             {
                 flag0 = (byte)gui.flag0,
                 flag1 = (byte)gui.flag1,
-                filenameHash = gui.filenameHash, // hash
+                lastModified = gui.filenameHash, // hash
                 somecount0 = gui.somecount0,
                 somecount1 = gui.somecount1,
                 somecount2 = gui.somecount2,
@@ -598,10 +608,8 @@ namespace GUI_Investigator
 
         public static GUI FromXmlString(string xml)
         {
-            using (var sr = new StringReader(xml))
-            {
-                return (GUI)new XmlSerializer(typeof(GUI)).Deserialize(sr);
-            }
+            using var sr = new StringReader(xml);
+            return (GUI)new XmlSerializer(typeof(GUI)).Deserialize(sr);
         }
 
         public string ToXmlString()
@@ -617,11 +625,9 @@ namespace GUI_Investigator
                 CheckCharacters = false,
                 OmitXmlDeclaration = true
             };
-            using (var sw = new StringWriter())
-            {
-                new XmlSerializer(typeof(GUI)).Serialize(XmlWriter.Create(sw, xmlSettings), this, ns);
-                return sw.ToString();
-            }
+            using var sw = new StringWriter();
+            new XmlSerializer(typeof(GUI)).Serialize(XmlWriter.Create(sw, xmlSettings), this, ns);
+            return sw.ToString();
         }
     }
 }

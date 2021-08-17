@@ -13,7 +13,7 @@ namespace GUI_Investigator
         public byte flag0; // 0 or 2 -- needs more investigation
         public byte flag1; // 0 or 2 -- needs more investigation
         public short zero0; // always 0
-        public int filenameHash;
+        public int lastModified;
         public int zero1; // always 0
 
         public int somecount0;
@@ -48,7 +48,7 @@ namespace GUI_Investigator
 
         public int zero2;
         public int table7count2; // same as table7count
-        public int table24size; // in bytes, 52 * number of entries
+        public int table24size; // in bytes, 48 * number of entries
         public int otherFlags; // not sure? looks like flags
 
         public int width;
@@ -93,8 +93,6 @@ namespace GUI_Investigator
 
         // padding
         public long zero4;
-        //public int zero5;
-        //public int zero6;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -132,7 +130,7 @@ namespace GUI_Investigator
         public int child;
         public int strName;
         public int SOME_ARBITRARY_PADDING_0;
-        public int tagHash;
+        public int objTypeHash;
         public int SOME_ARBITRARY_PADDING_1;
         public int table4start;
         public int SOME_ARBITRARY_PADDING_2;
@@ -177,9 +175,7 @@ namespace GUI_Investigator
         public byte dataType;
         public byte count; // counts table6count as well as number of dataItems to take
         public short zero0;
-        //public int zero1;
         public int id; // can be automatically determined?
-        //public int id_other; // can be automatically determined? // @todo @todo @todo THIS IS DEFINITELY DEFINITELY DEFINITELY DEFINITELY DEFINITELY AN UNKNOWN
         public int strProperty;
         public int SOME_ARBITRARY_PADDING_2;
         public int table6start;
@@ -210,7 +206,7 @@ namespace GUI_Investigator
         public int SOME_ARBITRARY_PADDING_0;
         public int strName;
         public int SOME_ARBITRARY_PADDING_1;
-        public int tagHash;
+        public int instTypeHash;
         public int SOME_ARBITRARY_PADDING_2;
         public int table4start;
         public int SOME_ARBITRARY_PADDING_3;
@@ -253,7 +249,7 @@ namespace GUI_Investigator
     { }
 
     [StructLayout(LayoutKind.Sequential)]
-    class Entry11 // size 4
+    class Entry11 // size 16
     {
         public int id;
         public int SOME_ARBITRARY_PADDING_0;
@@ -286,9 +282,9 @@ namespace GUI_Investigator
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    class Entry17 // size 32
+    class Entry17 // size 40
     {
-        public int id, zero1, strName, SOME_ARBITRARY_PADDING_0, varHash, SOME_ARBITRARY_PADDING_1, zero4, zero5, id2, zero7;
+        public int id, zero1, strName, SOME_ARBITRARY_PADDING_0, varTypeHash, SOME_ARBITRARY_PADDING_1, zero4, zero5, id2, zero7;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -301,11 +297,7 @@ namespace GUI_Investigator
         public short height;
         public int zero1;
         public int SOME_ARBITRARY_PADDING_1;
-        public float scaleX;
-        public float scaleY;
-        public float scaleZ;
-        public float scaleW;
-        //public Rectangle scale; // might be swapped other way round?
+        public Vertex4D scale; // might be swapped other way round?
         public int SOME_ARBITRARY_PADDING_1b;
         public int SOME_ARBITRARY_PADDING_1c;
         public int strPath;
@@ -316,7 +308,7 @@ namespace GUI_Investigator
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    class Entry19 // size 16
+    class Entry19 // size 24
     {
         public int zero0;
         public int SOME_ARBITRARY_PADDING_0;
@@ -329,7 +321,7 @@ namespace GUI_Investigator
     [StructLayout(LayoutKind.Sequential)]
     class Entry20 // size 20
     {
-        public int unkHash;
+        public int fontFilterTypeHash;
         public int unk0;
         public int unk1;
         public int unk2;
@@ -341,7 +333,7 @@ namespace GUI_Investigator
     { }
 
     [StructLayout(LayoutKind.Sequential)]
-    class Entry22 // size 12
+    class Entry22 // size 24
     {
         public int SOME_ARBITRARY_PADDING_0;
         public int SOME_ARBITRARY_PADDING_1;
@@ -358,10 +350,6 @@ namespace GUI_Investigator
     [StructLayout(LayoutKind.Sequential)]
     class Entry24
     {
-        public Rectangle dst, unk, src; // destination and source rectangles
-        //public int zero1;
+        public Vertex4D dst, unk, src; // destination and source rectangles
     }
 }
-
-
-// double-check entry4 and entry24
